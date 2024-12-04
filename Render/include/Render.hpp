@@ -2,14 +2,16 @@
 // ou arquivos de inclusão específicos a um projeto.
 
 #pragma once
+#include "RenderDLLMacro.hpp"
 
 namespace SampleRenderV2
 {
-	class Sample
+	class SAMPLE_RENDER_DLL_COMMAND Sample
 	{
 	public:
 		static void Hello();
 	};
 }
+
 
 // TODO: Referencie os cabeçalhos adicionais de que seu programa precisa aqui.

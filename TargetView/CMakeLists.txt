@@ -1,4 +1,11 @@
-add_executable(TargetView "src/entry.cpp")
-target_link_libraries(TargetView PUBLIC Render)
+set(TARGET_NAME TargetView)
 
-set_property(TARGET TargetView PROPERTY CXX_STANDARD 20)
+file(GLOB_RECURSE TARGET_HDRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/*.hpp")
+file(GLOB_RECURSE TARGET_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/*.cpp")
+
+add_executable(${TARGET_NAME} ${TARGET_HDRS} ${TARGET_SRCS})
+target_link_libraries(${TARGET_NAME} PUBLIC Render)
+if(WIN32)
+	set_target_properties(${TARGET_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
+endif()
+set_cxx_project_standards(${TARGET_NAME} 20 FALSE)
