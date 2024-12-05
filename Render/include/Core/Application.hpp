@@ -1,6 +1,8 @@
 #pragma once
 
 #include "RenderDLLMacro.hpp"
+#include "Window.hpp"
+#include <memory>
 
 namespace SampleRenderV2
 {
@@ -11,5 +13,7 @@ namespace SampleRenderV2
 		~Application();
 
 		void Run();
+	private:
+		std::shared_ptr<Window> m_Window;
 	};
 }

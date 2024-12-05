@@ -6,13 +6,19 @@
 
 SampleRenderV2::Application::Application()
 {
+	m_Window.reset(Window::Instantiate());
+	//m_Window->ConnectResizer(std::bind(&GraphicsContext::WindowResize, m_Context.get(), std::placeholders::_1, std::placeholders::_2));
 }
 
 SampleRenderV2::Application::~Application()
 {
+	m_Window.reset();
 }
 
 void SampleRenderV2::Application::Run()
 {
-	OutputDebugStringA("Sample render OK\n");
+	while (!m_Window->ShouldClose())
+	{
+		m_Window->Update();
+	}
 }
