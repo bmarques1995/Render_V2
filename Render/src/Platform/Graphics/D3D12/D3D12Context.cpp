@@ -21,7 +21,7 @@ SampleRenderV2::D3D12Context::D3D12Context(const Window* windowHandle, uint32_t 
 	CreateRenderTargetView();
 	CreateDepthStencilView();
 	CreateCommandAllocator();
-	CreateCommandList();
+	CreateCommandLists();
 }
 
 SampleRenderV2::D3D12Context::~D3D12Context()
@@ -305,7 +305,7 @@ void SampleRenderV2::D3D12Context::CreateCommandAllocator()
 
 }
 
-void SampleRenderV2::D3D12Context::CreateCommandList()
+void SampleRenderV2::D3D12Context::CreateCommandLists()
 {
 	m_CommandLists = new ComPointer<ID3D12GraphicsCommandList6>[m_FramesInFlight];
 	for (size_t i = 0; i < m_FramesInFlight; i++)
@@ -320,8 +320,8 @@ void SampleRenderV2::D3D12Context::CreateViewportAndScissor(uint32_t width, uint
 	m_Viewport.TopLeftY = 0;
 	m_Viewport.Width = (float)width;
 	m_Viewport.Height = (float)height;
-	m_Viewport.MinDepth = 1.0f;
-	m_Viewport.MaxDepth = 0.0f;
+	m_Viewport.MinDepth = 0.0f;
+	m_Viewport.MaxDepth = 1.0f;
 
 	m_ScissorRect.left = 0;
 	m_ScissorRect.right = (long)width;

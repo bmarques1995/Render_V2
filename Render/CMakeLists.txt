@@ -39,13 +39,10 @@ if(WIN32)
 	endif()
 endif()
 
-
-
-
 add_library(${TARGET_NAME} ${LIB_TYPE} ${RENDER_HDRS} ${RENDER_SRCS})
-target_include_directories(${TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Core> $<INSTALL_INTERFACE:./include/render/Core>)
-target_include_directories(${TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Window> $<INSTALL_INTERFACE:./include/render/Window>)
-target_include_directories(${TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Graphics> $<INSTALL_INTERFACE:./include/render/Graphics>)
+target_include_directories(${TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Core> $<INSTALL_INTERFACE:./include/Render/Core>)
+target_include_directories(${TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Window> $<INSTALL_INTERFACE:./include/Render/Window>)
+target_include_directories(${TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Graphics> $<INSTALL_INTERFACE:./include/Render/Graphics>)
 target_include_directories(${TARGET_NAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Platform/Window>)
 target_include_directories(${TARGET_NAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Platform/Graphics/VK>)
 
@@ -80,7 +77,7 @@ if(WIN32)
 
 	target_link_libraries(${TARGET_NAME} PUBLIC d3d12 dxgi dxguid)
 endif()
-target_link_libraries(${TARGET_NAME} PUBLIC Vulkan::Headers Vulkan::Loader SDL3::SDL3-shared)
+target_link_libraries(${TARGET_NAME} PUBLIC Vulkan::Headers Vulkan::Loader SDL3::SDL3-shared Utils)
 
 if(BUILD_SHARED_LIBS)
 	if(WIN32)
@@ -96,7 +93,7 @@ target_installation_behaviour(
 	VERSION ${PROJECT_VERSION}
 	PROJECT_NAME ${PROJECT_NAME}
 	NAMESPACE "RenderV2" 
-	HEADER_INPUT ${CMAKE_CURRENT_SOURCE_DIR}/include/Core/ ${CMAKE_CURRENT_SOURCE_DIR}/include/Window/ 
-	HEADER_OUTPUT ./include/Render/Core ./include/Render/Window)
+	HEADER_INPUT ${CMAKE_CURRENT_SOURCE_DIR}/include/Core/ ${CMAKE_CURRENT_SOURCE_DIR}/include/Window/ ${CMAKE_CURRENT_SOURCE_DIR}/include/Graphics/
+	HEADER_OUTPUT ./include/Render/Core ./include/Render/Window ./include/Render/Graphics)
 
 # TODO: Adicione testes e instale destinos, se necessário.

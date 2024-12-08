@@ -50,7 +50,7 @@ namespace SampleRenderV2
 		void CreateSwapChain(HWND windowHandle);
 		void CreateRenderTargetView();
 		void CreateCommandAllocator();
-		void CreateCommandList();
+		void CreateCommandLists();
 		void CreateViewportAndScissor(uint32_t width, uint32_t height);
 		void CreateDepthStencilView();
 

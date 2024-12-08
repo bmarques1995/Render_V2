@@ -1,4 +1,5 @@
 #include "Application.hpp"
+#include "Console.hpp"
 
 SampleRenderV2::Application* SampleRenderV2::Application::s_AppSingleton = nullptr;
 bool SampleRenderV2::Application::s_SingletonEnabled = false;
@@ -25,18 +26,18 @@ void SampleRenderV2::Application::Run()
 		m_Window->Update();
 		if (!m_Window->IsMinimized())
 		{
-			/*try {*/
+			try {
 				m_Context->ReceiveCommands();
 				m_Context->StageViewportAndScissors();
 				//m_Context->Draw(m_IndexBuffer->GetCount());
 				m_Context->DispatchCommands();
 				m_Context->Present();
-			/*}*/
-			/*catch (GraphicsException e)
+			}
+			catch (GraphicsException e)
 			{
 				Console::CoreError("Caught error: {}", e.what());
 				exit(2);
-			}*/
+			}
 		}
 	}
 }

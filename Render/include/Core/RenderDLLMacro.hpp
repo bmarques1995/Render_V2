@@ -7,5 +7,7 @@
 		#define SAMPLE_RENDER_DLL_COMMAND __declspec(dllimport)
 	#else
 		#define SAMPLE_RENDER_DLL_COMMAND
-	#endif 
+	#endif
+#else
+	#define SAMPLE_RENDER_DLL_COMMAND
 #endif

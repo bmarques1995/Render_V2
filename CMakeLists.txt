@@ -23,5 +23,6 @@ if(WIN32)
 endif()
 
 # Inclua subprojetos.
+add_subdirectory ("Utils")
 add_subdirectory ("Render")
 add_subdirectory ("TargetView")

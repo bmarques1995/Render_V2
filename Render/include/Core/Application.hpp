@@ -3,6 +3,7 @@
 #include "RenderDLLMacro.hpp"
 #include "Window.hpp"
 #include "GraphicsContext.hpp"
+#include <CommonException.hpp>
 #include <memory>
 
 namespace SampleRenderV2

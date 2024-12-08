@@ -1,5 +1,6 @@
 #include "VKContext.hpp"
 #include "Application.hpp"
+#include "Console.hpp"
 #include <algorithm>
 #include <cassert>
 #include <set>
@@ -537,8 +538,8 @@ void SampleRenderV2::VKContext::CreateViewportAndScissor(uint32_t width, uint32_
     m_Viewport.y = 0.0f;
     m_Viewport.width = (float)width;
     m_Viewport.height = (float)height;
-    m_Viewport.minDepth = 1.0f;
-    m_Viewport.maxDepth = 0.0f;
+    m_Viewport.minDepth = 0.0f;
+    m_Viewport.maxDepth = 1.0f;
 
     m_ScissorRect.offset.x = 0;
     m_ScissorRect.offset.y = 0;
@@ -934,10 +935,7 @@ void SampleRenderV2::VKContext::PopulateDebugMessengerCreateInfo(VkDebugUtilsMes
         void* pUserData
         ) -> VkBool32
         {
-#ifdef LOCATE_TROUBLE
-#error 
-            //Console::CoreLog("validation layer: {}", pCallbackData->pMessage);
-#endif
+            Console::CoreLog("validation layer: {}", pCallbackData->pMessage);
             return VK_FALSE;
         };
 }
