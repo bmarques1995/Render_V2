@@ -58,6 +58,11 @@ uint32_t SampleRenderV2::D3D12Context::GetSmallBufferAttachment() const
 	return 4;
 }
 
+uint32_t SampleRenderV2::D3D12Context::GetFramesInFlight() const
+{
+	return m_FramesInFlight;
+}
+
 void SampleRenderV2::D3D12Context::ReceiveCommands()
 {
 	m_CurrentBufferIndex = m_SwapChain->GetCurrentBackBufferIndex();
@@ -89,6 +94,7 @@ void SampleRenderV2::D3D12Context::ReceiveCommands()
 	depthStencilDesc.DepthEndingAccess.Type = D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE;
 
 	m_CommandLists[m_CurrentBufferIndex]->BeginRenderPass(1, &renderTargetDesc, &depthStencilDesc, D3D12_RENDER_PASS_FLAG_NONE);
+	//m_CommandLists[m_CurrentBufferIndex]->BeginRenderPass(1, &renderTargetDesc, nullptr, D3D12_RENDER_PASS_FLAG_NONE);
 }
 
 void SampleRenderV2::D3D12Context::DispatchCommands()
@@ -144,6 +150,11 @@ ID3D12Device10* SampleRenderV2::D3D12Context::GetDevicePtr() const
 ID3D12GraphicsCommandList6* SampleRenderV2::D3D12Context::GetCurrentCommandList() const
 {
 	return m_CommandLists[m_CurrentBufferIndex].GetConst();
+}
+
+ID3D12CommandQueue* SampleRenderV2::D3D12Context::GetCommandQueue() const
+{
+	return m_CommandQueue.GetConst();
 }
 
 const std::string SampleRenderV2::D3D12Context::GetGPUName()
@@ -257,7 +268,7 @@ void SampleRenderV2::D3D12Context::CreateSwapChain(HWND windowHandle)
 	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING | DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
 	DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullscreenDesc{};
-	fullscreenDesc.RefreshRate.Denominator = 120;
+	fullscreenDesc.RefreshRate.Denominator = 0;
 	fullscreenDesc.RefreshRate.Numerator = 1;
 	fullscreenDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 	fullscreenDesc.Scaling = DXGI_MODE_SCALING_STRETCHED;
@@ -265,6 +276,7 @@ void SampleRenderV2::D3D12Context::CreateSwapChain(HWND windowHandle)
 
 	ComPointer<IDXGISwapChain1> swapChain;
 	m_DXGIFactory->CreateSwapChainForHwnd(m_CommandQueue.Get(), windowHandle, &swapChainDesc, &fullscreenDesc, nullptr, &swapChain);
+	//m_DXGIFactory->CreateSwapChainForHwnd(m_CommandQueue.Get(), windowHandle, &swapChainDesc, nullptr, nullptr, &swapChain);
 	swapChain->QueryInterface(IID_PPV_ARGS(m_SwapChain.GetAddressOf()));
 }
 

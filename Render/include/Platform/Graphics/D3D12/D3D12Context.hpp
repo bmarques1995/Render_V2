@@ -32,11 +32,13 @@ namespace SampleRenderV2
 		void StageViewportAndScissors() override;
 
 		uint32_t GetSmallBufferAttachment() const override;
+		uint32_t GetFramesInFlight() const override;
 
 		void Draw(uint32_t elements) override;
 
 		ID3D12Device10* GetDevicePtr() const;
 		ID3D12GraphicsCommandList6* GetCurrentCommandList() const;
+		ID3D12CommandQueue* GetCommandQueue() const;
 
 		const std::string GetGPUName() override;
 

@@ -33,7 +33,8 @@ namespace SampleRenderV2
 		void SetClearColor(float r, float g, float b, float a) override;
 
 		uint32_t GetUniformAttachment() const override;
-		uint32_t GetSmallBufferAttachment() const override;
+		uint32_t GetSmallBufferAttachment() const override; 
+		uint32_t GetFramesInFlight() const override;
 
 		void ReceiveCommands() override;
 		void DispatchCommands() override;
@@ -46,6 +47,7 @@ namespace SampleRenderV2
 
 		void WindowResize(uint32_t width, uint32_t height) override;
 
+		VkInstance GetInstance() const;
 		VkCommandPool GetCommandPool() const;
 		VkQueue GetGraphicsQueue() const;
 		VkPhysicalDevice GetAdapter() const;
@@ -54,6 +56,8 @@ namespace SampleRenderV2
 		VkCommandBuffer GetCurrentCommandBuffer() const;
 		VkSurfaceKHR GetSurface() const;
 
+		uint32_t GetGraphicsQueueFamilyIndex() const;
+		uint32_t GetSwapchainImageCount() const;
 	private:
 
 		//Master
@@ -168,5 +172,6 @@ namespace SampleRenderV2
 		std::vector<const char*> m_InstanceExtensions;
 
 		std::string m_GPUName;
+		QueueFamilyIndices m_QueueFamilyIndices;
 	};
 }

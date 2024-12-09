@@ -1,6 +1,7 @@
 #include "SDLWindow.hpp"
 #include <cassert>
 #include <windows.h>
+#include <imgui_impl_sdl3.h>
 
 SampleRenderV2::SDLWindow::SDLWindow(uint32_t width, uint32_t height, std::string_view title) :
 	m_Width(width), m_Height(height), m_Title(title), m_Minimized(false), m_ShouldClose(false), m_FullScreen(false)
@@ -50,6 +51,11 @@ std::any SampleRenderV2::SDLWindow::GetInstance() const
 #endif
 }
 
+std::any SampleRenderV2::SDLWindow::GetWindow() const
+{
+	return m_Window;
+}
+
 void SampleRenderV2::SDLWindow::ResetTitle(std::string newTitle)
 {
 	m_Title = newTitle;
@@ -76,6 +82,7 @@ void SampleRenderV2::SDLWindow::Update()
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
 	{
+		ImGui_ImplSDL3_ProcessEvent(&event);
 		if (event.type == SDL_EVENT_WINDOW_MINIMIZED)
 			m_Minimized = true;
 		if (event.type == SDL_EVENT_WINDOW_RESTORED)
@@ -88,7 +95,7 @@ void SampleRenderV2::SDLWindow::Update()
 			m_ShouldClose = true;
 		if (event.type == SDL_EVENT_KEY_DOWN)
 		{
-			if (event.key.key == SDLK_SPACE)
+			if (event.key.key == SDLK_F11)
 			{
 				m_FullScreen = !m_FullScreen;
 				SDL_SetWindowFullscreen(m_Window, m_FullScreen);

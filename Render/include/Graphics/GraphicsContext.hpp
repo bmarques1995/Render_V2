@@ -29,6 +29,7 @@ namespace SampleRenderV2
 
 		virtual uint32_t GetUniformAttachment() const = 0;
 		virtual uint32_t GetSmallBufferAttachment() const = 0;
+		virtual uint32_t GetFramesInFlight() const = 0;
 
 		virtual void ReceiveCommands() = 0;
 		virtual void DispatchCommands() = 0;

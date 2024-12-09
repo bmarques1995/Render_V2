@@ -127,6 +127,11 @@ uint32_t SampleRenderV2::VKContext::GetSmallBufferAttachment() const
     return 4;
 }
 
+uint32_t SampleRenderV2::VKContext::GetFramesInFlight() const
+{
+    return m_FramesInFlight;
+}
+
 void SampleRenderV2::VKContext::ReceiveCommands()
 {
     vkWaitForFences(m_Device, 1, &m_InFlightFences[m_CurrentBufferIndex], VK_TRUE, UINT64_MAX);
@@ -254,6 +259,11 @@ void SampleRenderV2::VKContext::WindowResize(uint32_t width, uint32_t height)
     RecreateSwapChain();
 }
 
+VkInstance SampleRenderV2::VKContext::GetInstance() const
+{
+    return m_Instance;
+}
+
 VkCommandPool SampleRenderV2::VKContext::GetCommandPool() const
 {
     return m_CommandPool;
@@ -287,6 +297,16 @@ VkCommandBuffer SampleRenderV2::VKContext::GetCurrentCommandBuffer() const
 VkSurfaceKHR SampleRenderV2::VKContext::GetSurface() const
 {
     return m_Surface;
+}
+
+uint32_t SampleRenderV2::VKContext::GetGraphicsQueueFamilyIndex() const
+{
+    return m_QueueFamilyIndices.graphicsFamily.value();
+}
+
+uint32_t SampleRenderV2::VKContext::GetSwapchainImageCount() const
+{
+    return m_SwapChainImageCount;
 }
 
 void SampleRenderV2::VKContext::CreateInstance()
@@ -491,10 +511,10 @@ void SampleRenderV2::VKContext::BufferizeUniformAttachment()
 void SampleRenderV2::VKContext::CreateDevice()
 {
     VkResult vkr;
-    QueueFamilyIndices indices = FindQueueFamilies(m_Adapter);
+    m_QueueFamilyIndices = FindQueueFamilies(m_Adapter);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+    std::set<uint32_t> uniqueQueueFamilies = { m_QueueFamilyIndices.graphicsFamily.value(), m_QueueFamilyIndices.presentFamily.value() };
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -528,8 +548,8 @@ void SampleRenderV2::VKContext::CreateDevice()
     vkr = vkCreateDevice(m_Adapter, &createInfo, nullptr, &m_Device);
     assert(vkr == VK_SUCCESS);
 
-    vkGetDeviceQueue(m_Device, indices.graphicsFamily.value(), 0, &m_GraphicsQueue);
-    vkGetDeviceQueue(m_Device, indices.presentFamily.value(), 0, &m_PresentQueue);
+    vkGetDeviceQueue(m_Device, m_QueueFamilyIndices.graphicsFamily.value(), 0, &m_GraphicsQueue);
+    vkGetDeviceQueue(m_Device, m_QueueFamilyIndices.presentFamily.value(), 0, &m_PresentQueue);
 }
 
 void SampleRenderV2::VKContext::CreateViewportAndScissor(uint32_t width, uint32_t height)
@@ -615,7 +635,7 @@ VkSurfaceFormatKHR SampleRenderV2::VKContext::ChooseSwapSurfaceFormat(const std:
 VkPresentModeKHR SampleRenderV2::VKContext::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
     for (const auto& availablePresentMode : availablePresentModes) {
-        if (availablePresentMode == VK_PRESENT_MODE_FIFO_KHR) {
+        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
             return availablePresentMode;
         }
     }

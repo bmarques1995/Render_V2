@@ -15,6 +15,7 @@ namespace SampleRenderV2
 		uint32_t GetHeight() const override;
 		std::any GetNativePointer() const override;
 		std::any GetInstance() const override;
+		std::any GetWindow() const override;
 		void ResetTitle(std::string newTitle) override;
 		bool ShouldClose() const override;
 		const bool* TrackWindowClosing() const override;

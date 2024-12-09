@@ -3,6 +3,8 @@
 #include "RenderDLLMacro.hpp"
 #include "Window.hpp"
 #include "GraphicsContext.hpp"
+#include "ImguiWindowController.hpp"
+#include "ImguiContext.hpp"
 #include <CommonException.hpp>
 #include <memory>
 
@@ -27,6 +29,8 @@ namespace SampleRenderV2
 	private:
 		std::shared_ptr<Window> m_Window;
 		std::shared_ptr<GraphicsContext> m_Context;
+		std::shared_ptr<ImguiWindowController> m_ImguiWindowController;
+		std::shared_ptr<ImguiContext> m_ImguiContext;
 
 		static Application* s_AppSingleton;
 		static bool s_SingletonEnabled;
