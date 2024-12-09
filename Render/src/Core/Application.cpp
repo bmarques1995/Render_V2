@@ -8,7 +8,7 @@ bool SampleRenderV2::Application::s_SingletonEnabled = false;
 SampleRenderV2::Application::Application()
 {
 	EnableSingleton(this);
-	m_CurrentAPI = GraphicsAPI::SAMPLE_RENDER_GRAPHICS_API_VK;
+	m_Starter.reset(new ApplicationStarter("render.json"));
 	m_Window.reset(Window::Instantiate());
 	m_Context.reset(GraphicsContext::Instantiate(m_Window.get(), 3));
 	m_Window->ConnectResizer(std::bind(&GraphicsContext::WindowResize, m_Context.get(), std::placeholders::_1, std::placeholders::_2));

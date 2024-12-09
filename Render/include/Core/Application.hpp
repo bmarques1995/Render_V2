@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RenderDLLMacro.hpp"
+#include "ApplicationStarter.hpp"
 #include "Window.hpp"
 #include "GraphicsContext.hpp"
 #include "ImguiWindowController.hpp"
@@ -23,7 +24,7 @@ namespace SampleRenderV2
 
 		inline GraphicsAPI GetCurrentAPI()
 		{
-			return m_CurrentAPI;
+			return m_Starter->GetCurrentAPI();;
 		}
 
 	private:
@@ -31,9 +32,9 @@ namespace SampleRenderV2
 		std::shared_ptr<GraphicsContext> m_Context;
 		std::shared_ptr<ImguiWindowController> m_ImguiWindowController;
 		std::shared_ptr<ImguiContext> m_ImguiContext;
+		std::unique_ptr<ApplicationStarter> m_Starter;
 
 		static Application* s_AppSingleton;
 		static bool s_SingletonEnabled;
-		GraphicsAPI m_CurrentAPI;
 	};
 }
