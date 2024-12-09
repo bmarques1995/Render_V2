@@ -21,11 +21,11 @@ SampleRenderV2::ApplicationStarter::ApplicationStarter(std::string_view jsonFile
 	{
 		Json::Reader reader;
 		std::string jsonResult;
-		FileHandler::ReadTextFile(jsonFilepath.data(), &jsonResult);
-		reader.parse(jsonResult, m_Starter);
+		bool healthy = FileHandler::ReadTextFile(jsonFilepath.data(), &jsonResult);
+		healthy &= reader.parse(jsonResult, m_Starter);
 
 		auto it = s_GraphicsAPIMapper.find(m_Starter["GraphicsAPI"].asString());
-		if (it == s_GraphicsAPIMapper.end())
+		if ((it == s_GraphicsAPIMapper.end()) && (!healthy))
 		{
 			m_Starter["GraphicsAPI"] = "SAMPLE_RENDER_GRAPHICS_API_VK";
 			m_API = SAMPLE_RENDER_GRAPHICS_API_VK;
