@@ -88,6 +88,14 @@ uint32_t SampleRenderV2::VKBuffer::FindMemoryType(uint32_t typeFilter, VkMemoryP
     return 0xffffffffu;
 }
 
+void SampleRenderV2::VKBuffer::DestroyBuffer()
+{
+    auto device = (*m_Context)->GetDevice();
+    vkDeviceWaitIdle(device);
+    vkDestroyBuffer(device, m_Buffer, nullptr);
+    vkFreeMemory(device, m_BufferMemory, nullptr);
+}
+
 SampleRenderV2::VKVertexBuffer::VKVertexBuffer(const std::shared_ptr<VKContext>* context, const void* data, size_t size, uint32_t stride) :
     VKBuffer(context)
 {
@@ -113,10 +121,7 @@ SampleRenderV2::VKVertexBuffer::VKVertexBuffer(const std::shared_ptr<VKContext>*
 
 SampleRenderV2::VKVertexBuffer::~VKVertexBuffer()
 {
-    auto device = (*m_Context)->GetDevice();
-    vkDeviceWaitIdle(device);
-    vkDestroyBuffer(device, m_Buffer, nullptr);
-    vkFreeMemory(device, m_BufferMemory, nullptr);
+    DestroyBuffer();
 }
 
 void SampleRenderV2::VKVertexBuffer::Stage() const
@@ -154,10 +159,7 @@ SampleRenderV2::VKIndexBuffer::VKIndexBuffer(const std::shared_ptr<VKContext>* c
 
 SampleRenderV2::VKIndexBuffer::~VKIndexBuffer()
 {
-    auto device = (*m_Context)->GetDevice();
-    vkDeviceWaitIdle(device);
-    vkDestroyBuffer(device, m_Buffer, nullptr);
-    vkFreeMemory(device, m_BufferMemory, nullptr);
+    DestroyBuffer();
 }
 
 void SampleRenderV2::VKIndexBuffer::Stage() const

@@ -14,6 +14,8 @@ namespace SampleRenderV2
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
+		void DestroyBuffer();
+
 		const std::shared_ptr<VKContext>* m_Context;
 		VkBuffer m_Buffer;
 		VkDeviceMemory m_BufferMemory;
