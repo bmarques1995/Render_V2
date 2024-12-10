@@ -15,7 +15,6 @@ StaticSampler( s2,\
                 maxLOD = 3.402823466e+38f,\
                 space = 0,\
                 visibility = SHADER_VISIBILITY_ALL), \
-DescriptorTable(CBV(b1))
 
 struct VSInput
 {
