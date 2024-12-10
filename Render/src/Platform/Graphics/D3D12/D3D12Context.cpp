@@ -4,7 +4,7 @@
 #include <cassert>
 
 SampleRenderV2::D3D12Context::D3D12Context(const Window* windowHandle, uint32_t framesInFlight) :
-	m_FramesInFlight(framesInFlight)
+	m_FramesInFlight(framesInFlight), m_IsVSyncEnabled(true)
 {
 	SetClearColor(.0f, .5f, .25f, 1.0f);
 
@@ -127,13 +127,23 @@ void SampleRenderV2::D3D12Context::DispatchCommands()
 
 void SampleRenderV2::D3D12Context::Present()
 {
-	m_SwapChain->Present(1, 0);
+	m_SwapChain->Present(m_IsVSyncEnabled ? 1 : 0, 0);
 }
 
 void SampleRenderV2::D3D12Context::StageViewportAndScissors()
 {
 	m_CommandLists[m_CurrentBufferIndex]->RSSetViewports(1, &m_Viewport);
 	m_CommandLists[m_CurrentBufferIndex]->RSSetScissorRects(1, &m_ScissorRect);
+}
+
+void SampleRenderV2::D3D12Context::SetVSync(bool enableVSync)
+{
+	m_IsVSyncEnabled = enableVSync;
+}
+
+bool SampleRenderV2::D3D12Context::IsVSyncEnabled() const
+{
+	return m_IsVSyncEnabled;
 }
 
 void SampleRenderV2::D3D12Context::Draw(uint32_t elements)

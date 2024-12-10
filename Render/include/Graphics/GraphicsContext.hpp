@@ -36,6 +36,9 @@ namespace SampleRenderV2
 		virtual void Present() = 0;
 		virtual void StageViewportAndScissors() = 0;
 
+		virtual void SetVSync(bool enableVSync) = 0;
+		virtual bool IsVSyncEnabled() const = 0;
+
 		virtual void Draw(uint32_t elements) = 0;
 
 		virtual const std::string GetGPUName() = 0;

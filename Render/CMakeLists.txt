@@ -29,7 +29,7 @@ if(WIN32)
 	trace_installable_file(NAME "VkLayer_khronos_validation" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_validation.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "dll")
 	trace_installable_file(NAME "VkLayer_khronos_validation" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_validation.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "json")
 
-	trace_dependency(NAME jsoncpp INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/jsoncpp.ps1")
+	
 	trace_dependency(NAME imgui INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/imgui.ps1")
 
 	if(REGISTER_VULKAN_LAYERS)
@@ -80,7 +80,7 @@ if(WIN32)
 
 	target_link_libraries(${TARGET_NAME} PUBLIC d3d12 dxgi dxguid)
 endif()
-target_link_libraries(${TARGET_NAME} PUBLIC Vulkan::Headers Vulkan::Loader SDL3::SDL3-shared Utils imgui::imgui jsoncpp_lib)
+target_link_libraries(${TARGET_NAME} PUBLIC Vulkan::Headers Vulkan::Loader SDL3::SDL3-shared Utils imgui::imgui ShaderManager PRIVATE ${CMAKE_PREFIX_PATH}/lib/dxcompiler.lib)
 
 if(BUILD_SHARED_LIBS)
 	if(WIN32)

@@ -48,7 +48,7 @@ const std::vector<const char*> SampleRenderV2::VKContext::deviceExtensions =
 };
 
 SampleRenderV2::VKContext::VKContext(const Window* windowHandle, uint32_t framesInFlight) :
-    m_FramesInFlight(framesInFlight)
+    m_FramesInFlight(framesInFlight), m_IsVSyncEnabled(true)
 {
     m_ClearColor.float32[0] = 1.0f;
     m_ClearColor.float32[1] = 76.0f / 255.0f;
@@ -236,6 +236,20 @@ void SampleRenderV2::VKContext::StageViewportAndScissors()
 {
     vkCmdSetViewport(m_CommandBuffers[m_CurrentBufferIndex], 0, 1, &m_Viewport);
     vkCmdSetScissor(m_CommandBuffers[m_CurrentBufferIndex], 0, 1, &m_ScissorRect);
+}
+
+void SampleRenderV2::VKContext::SetVSync(bool enableVSync)
+{
+    if (m_IsVSyncEnabled != enableVSync)
+    {
+        m_IsVSyncEnabled = enableVSync;
+		RecreateSwapChain();
+    }
+}
+
+bool SampleRenderV2::VKContext::IsVSyncEnabled() const
+{
+    return false;
 }
 
 void SampleRenderV2::VKContext::Draw(uint32_t elements)
@@ -635,7 +649,7 @@ VkSurfaceFormatKHR SampleRenderV2::VKContext::ChooseSwapSurfaceFormat(const std:
 VkPresentModeKHR SampleRenderV2::VKContext::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
     for (const auto& availablePresentMode : availablePresentModes) {
-        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+        if ((availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) && m_IsVSyncEnabled) {
             return availablePresentMode;
         }
     }

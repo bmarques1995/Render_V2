@@ -41,6 +41,9 @@ namespace SampleRenderV2
 		void Present() override;
 		void StageViewportAndScissors() override;
 
+		void SetVSync(bool enableVSync) override;
+		bool IsVSyncEnabled() const override;
+
 		void Draw(uint32_t elements) override;
 
 		const std::string GetGPUName() override;
@@ -154,6 +157,7 @@ namespace SampleRenderV2
 		VkImageView m_DepthStencilView;
 
 		const bool* m_IsWindowClosing;
+		bool m_IsVSyncEnabled;
 
 		VkCommandPool m_CommandPool;
 		VkCommandBuffer* m_CommandBuffers;

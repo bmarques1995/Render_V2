@@ -31,6 +31,9 @@ namespace SampleRenderV2
 		void Present() override;
 		void StageViewportAndScissors() override;
 
+		void SetVSync(bool enableVSync) override;
+		bool IsVSyncEnabled() const override;
+
 		uint32_t GetSmallBufferAttachment() const override;
 		uint32_t GetFramesInFlight() const override;
 
@@ -81,6 +84,8 @@ namespace SampleRenderV2
 		ComPointer<ID3D12Fence> m_CommandQueueFence;
 		uint64_t m_CommandQueueFenceValue = 0;
 		HANDLE m_CommandQueueFenceEvent = nullptr;
+
+		bool m_IsVSyncEnabled;
 
 		ComPointer<IDXGISwapChain4> m_SwapChain;
 		ComPointer<ID3D12Resource2>* m_RenderTargets;
