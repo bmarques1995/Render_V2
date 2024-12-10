@@ -14,7 +14,7 @@ if (POLICY CMP0141)
 	set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_helpers)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_helpers ${CMAKE_PREFIX_PATH})
 include(target_destination)
 include(dep_tracer)
 
@@ -27,3 +27,4 @@ add_subdirectory ("Utils")
 add_subdirectory ("ShaderManager")
 add_subdirectory ("Render")
 add_subdirectory ("TargetView")
+add_subdirectory ("Tests")
