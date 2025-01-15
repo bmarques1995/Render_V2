@@ -78,9 +78,9 @@ if(WIN32)
 	find_library(DXGI_FOUND NAMES dxgi REQUIRED)
 	find_library(DXGUID_FOUND NAMES dxguid REQUIRED)
 
-	target_link_libraries(${TARGET_NAME} PUBLIC d3d12 dxgi dxguid)
+	target_link_libraries(${TARGET_NAME} PRIVATE d3d12 dxgi dxguid)
 endif()
-target_link_libraries(${TARGET_NAME} PUBLIC Vulkan::Headers Vulkan::Loader SDL3::SDL3-shared Utils imgui::imgui ShaderManager PRIVATE ${CMAKE_PREFIX_PATH}/lib/dxcompiler.lib)
+target_link_libraries(${TARGET_NAME} PUBLIC imgui::imgui ShaderManager PRIVATE ${CMAKE_PREFIX_PATH}/lib/dxcompiler.lib Vulkan::Headers Vulkan::Loader SDL3::SDL3-shared Utils)
 
 if(BUILD_SHARED_LIBS)
 	if(WIN32)

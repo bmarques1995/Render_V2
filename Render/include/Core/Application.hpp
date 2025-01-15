@@ -8,6 +8,7 @@
 #include "ImguiContext.hpp"
 #include "CSOCompiler.hpp"
 #include "SPVCompiler.hpp"
+#include "LayerStack.hpp"
 #include "Shader.hpp"
 #include "Buffer.hpp"
 #include <CommonException.hpp>
@@ -31,7 +32,7 @@ namespace SampleRenderV2
 			return m_Starter->GetCurrentAPI();;
 		}
 
-	private:
+	protected:
 
 		float vBuffer[42] =
 		{
@@ -64,5 +65,6 @@ namespace SampleRenderV2
 
 		static Application* s_AppSingleton;
 		static bool s_SingletonEnabled;
+		LayerStack m_LayerStack;
 	};
 }

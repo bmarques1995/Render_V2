@@ -9,6 +9,7 @@ bool SampleRenderV2::Application::s_SingletonEnabled = false;
 SampleRenderV2::Application::Application()
 {
 	EnableSingleton(this);
+	SampleRenderV2::Console::Init();
 	m_Starter.reset(new ApplicationStarter("render.json"));
 	m_Window.reset(Window::Instantiate());
 	m_Context.reset(GraphicsContext::Instantiate(m_Window.get(), 3));
@@ -54,6 +55,7 @@ SampleRenderV2::Application::~Application()
 	ImguiContext::EndImgui();
 	m_Context.reset();
 	m_Window.reset();
+	SampleRenderV2::Console::End();
 }
 
 void SampleRenderV2::Application::Run()
@@ -73,8 +75,8 @@ void SampleRenderV2::Application::Run()
 					m_ImguiContext->ReceiveInput();
 					ImguiContext::StartFrame();
 					{
-						if (show_demo_window)
-							ImGui::ShowDemoWindow(&show_demo_window);
+						for (Layer* layer : m_LayerStack)
+							layer->OnUpdate();
 						//m_Context->Draw(m_IndexBuffer->GetCount());
 						m_Shader->Stage();
 						m_VertexBuffer->Stage();
