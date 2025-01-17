@@ -10,11 +10,14 @@ file(GLOB_RECURSE RENDER_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/*.cpp")
 
 if(WIN32)
 	trace_dependency(NAME spdlog INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/spdlog.ps1")
+	#trace_dependency(NAME libgit2 INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/libgit2.ps1")
 endif()
 
 add_library(${TARGET_NAME} ${LIB_TYPE} ${RENDER_HDRS} ${RENDER_SRCS})
 target_include_directories(${TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:./include/Utils>)
+
 target_link_libraries(${TARGET_NAME} PUBLIC spdlog::spdlog)
+#target_link_libraries(${TARGET_NAME} PUBLIC spdlog::spdlog libgit2::libgit2package)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	target_compile_definitions(${TARGET_NAME} PUBLIC UTILS_DEBUG_MODE)
@@ -30,6 +33,7 @@ endif()
 
 if(BUILD_SHARED_LIBS)
 	if(WIN32)
+		#target_compile_definitions(${TARGET_NAME} PUBLIC __STDC_LIMIT_MACROS)
 		target_compile_definitions(${TARGET_NAME} PRIVATE SAMPLE_UTILS_V2_DLL_MACRO_EXPORT)
 		target_compile_definitions(${TARGET_NAME} INTERFACE SAMPLE_UTILS_V2_DLL_MACRO_IMPORT)
 	endif()

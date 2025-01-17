@@ -333,10 +333,10 @@ void SampleRenderV2::VKContext::CreateInstance()
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "Hello Triangle";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 3, 290);
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, 4, 0);
     appInfo.pEngineName = "No Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 3, 290);
-    appInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 290);
+    appInfo.engineVersion = VK_MAKE_VERSION(1, 4, 0);
+    appInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 4, 0);
 
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -380,7 +380,6 @@ void SampleRenderV2::VKContext::CreateSurface(const Window* windowHandle)
     VkResult vkr;
 
 #ifdef RENDER_USES_WINDOWS
-
     VkWin32SurfaceCreateInfoKHR creationInfo = {};
     creationInfo.hinstance = std::any_cast<HINSTANCE>(windowHandle->GetInstance());
     creationInfo.hwnd = std::any_cast<HWND>(windowHandle->GetNativePointer());

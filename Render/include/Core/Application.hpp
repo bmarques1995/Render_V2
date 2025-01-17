@@ -32,6 +32,11 @@ namespace SampleRenderV2
 			return m_Starter->GetCurrentAPI();;
 		}
 
+		inline const std::shared_ptr<Window>& GetWindow() const 
+		{ 
+			return m_Window;
+		}
+
 	protected:
 
 		float vBuffer[42] =

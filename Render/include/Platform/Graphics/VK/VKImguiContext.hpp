@@ -16,5 +16,8 @@ namespace SampleRenderV2
 		void DispatchInput() override;
 	private:
 		const std::shared_ptr<VKContext>* m_Context;
+#ifdef RENDER_USES_WINDOWS
+		static int ImGui_ImplWin32_CreateVkSurface(ImGuiViewport* viewport, ImU64 vk_instance, const void* vk_allocator, ImU64* out_vk_surface);
+#endif
 	};
 }
