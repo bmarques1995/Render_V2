@@ -2,6 +2,7 @@
 
 #define rs_controller \
 RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT), \
+RootConstants(num32BitConstants=16, b0), \
 StaticSampler( s2,\
                 filter = FILTER_ANISOTROPIC,\
                 addressU = TEXTURE_ADDRESS_WRAP,\
@@ -15,6 +16,24 @@ StaticSampler( s2,\
                 maxLOD = 3.402823466e+38f,\
                 space = 0,\
                 visibility = SHADER_VISIBILITY_ALL), \
+
+struct SmallMVP
+{
+    float4x4 M;
+};
+
+#ifdef VK_HLSL
+
+[[vk::push_constant]] SmallMVP m_SmallMVP;
+
+#else
+
+cbuffer u_SmallMVP : register(b0)
+{
+    SmallMVP m_SmallMVP;
+};
+
+#endif
 
 struct VSInput
 {
@@ -31,7 +50,7 @@ struct PSInput
 PSInput vs_main(VSInput vsInput)
 {
     PSInput vsoutput;
-    vsoutput.pos = float4(vsInput.pos, 1.0f);
+    vsoutput.pos = mul(float4(vsInput.pos, 1.0f), m_SmallMVP.M);
     vsoutput.col = vsInput.col;
     return vsoutput;
 }

@@ -11,14 +11,19 @@ namespace SampleRenderV2
 	class SAMPLE_RENDER_DLL_COMMAND VKShader : public Shader
 	{
 	public:
-		VKShader(const std::shared_ptr<VKContext>* context, std::string json_controller_path, InputBufferLayout layout);
+		VKShader(const std::shared_ptr<VKContext>* context, std::string json_controller_path, InputBufferLayout layout, SmallBufferLayout smallBufferLayout);
 		~VKShader();
 
 		void Stage() override;
 		virtual uint32_t GetStride() const override;
 		virtual uint32_t GetOffset() const override;
 
+		void BindSmallBuffer(const void* data, size_t size, uint32_t bindingSlot) override;
+
+		void BindDescriptors() override;
 	private:
+
+		void CreateDescriptorSetLayout();
 
 		void PushShader(std::string_view stage, VkPipelineShaderStageCreateInfo* graphicsDesc);
 		void InitJsonAndPaths(std::string json_controller_path);
@@ -31,16 +36,19 @@ namespace SampleRenderV2
 		static const std::list<std::string> s_GraphicsPipelineStages;
 
 		static const std::unordered_map<std::string, VkShaderStageFlagBits> s_StageCaster;
+		static const std::unordered_map<uint32_t, VkShaderStageFlagBits> s_EnumStageCaster;
 
 		std::unordered_map<std::string, VkShaderModule> m_Modules;
 		std::unordered_map<std::string, std::string> m_ModulesEntrypoint;
 
 		Json::Value m_PipelineInfo;
 
+		VkDescriptorSetLayout m_RootSignature;
 		InputBufferLayout m_Layout;
+		SmallBufferLayout m_SmallBufferLayout;
 		const std::shared_ptr<VKContext>* m_Context;
 		std::string m_ShaderDir;
 		VkPipeline m_GraphicsPipeline;
-		VkPipelineLayout m_RootSignature;
+		VkPipelineLayout m_PipelineLayout;
 	};
 }

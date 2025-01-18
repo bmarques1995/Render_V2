@@ -17,6 +17,7 @@ if(WIN32)
 
 	trace_file(NAME "d3d12core" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/d3d12core.ps1" LOCATION "${PROJECT_SOURCE_DIR}" EXTENSION "zip")
 	trace_dependency(NAME SDL3 INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/sdl3.ps1")
+	trace_dependency(NAME Eigen3 INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/eigen.ps1" LIMIT_SEARCH_PATHS)
 	trace_dependency(NAME VulkanHeaders INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_headers.ps1")
 	trace_dependency(NAME VulkanLoader INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_loader.ps1")
 	trace_dependency(NAME Spirv-Headers INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/spirv_headers.ps1")
@@ -80,7 +81,7 @@ if(WIN32)
 
 	target_link_libraries(${TARGET_NAME} PRIVATE d3d12 dxgi dxguid)
 endif()
-target_link_libraries(${TARGET_NAME} PUBLIC imgui::imgui ShaderManager PRIVATE ${CMAKE_PREFIX_PATH}/lib/dxcompiler.lib Vulkan::Headers Vulkan::Loader SDL3::SDL3-shared Utils)
+target_link_libraries(${TARGET_NAME} PUBLIC imgui::imgui Eigen3::Eigen ShaderManager PRIVATE ${CMAKE_PREFIX_PATH}/lib/dxcompiler.lib Vulkan::Headers Vulkan::Loader SDL3::SDL3-shared Utils)
 
 if(BUILD_SHARED_LIBS)
 	if(WIN32)

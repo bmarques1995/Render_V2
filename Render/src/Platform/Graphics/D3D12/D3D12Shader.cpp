@@ -21,13 +21,19 @@ const std::list<std::string> SampleRenderV2::D3D12Shader::s_GraphicsPipelineStag
 	"ps"
 };
 
-SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* context, std::string json_controller_path, InputBufferLayout layout) :
-	m_Context(context), m_Layout(layout)
+SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* context, std::string json_controller_path, InputBufferLayout layout, SmallBufferLayout smallBufferLayout) :
+	m_Context(context), m_Layout(layout), m_SmallBufferLayout(smallBufferLayout)
 {
 	HRESULT hr;
 	auto device = (*m_Context)->GetDevicePtr();
 
 	InitJsonAndPaths(json_controller_path);
+
+	auto smallBuffers = m_SmallBufferLayout.GetElements();
+	for (auto& smallBuffer : smallBuffers)
+	{
+		m_RootSignatureSize += smallBuffer.second.GetSize();
+	}
 
 	auto nativeElements = m_Layout.GetElements();
 	D3D12_INPUT_ELEMENT_DESC* ied = new D3D12_INPUT_ELEMENT_DESC[nativeElements.size()];
@@ -42,6 +48,8 @@ SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* co
 		ied[i].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
 		ied[i].InstanceDataStepRate = 0;
 	}
+
+	assert(m_RootSignatureSize <= 256);
 
 	CreateGraphicsRootSignature(m_RootSignature.GetAddressOf(), device);
 
@@ -74,7 +82,7 @@ SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* co
 
 	hr = device->CreateGraphicsPipelineState(&graphicsDesc, IID_PPV_ARGS(m_GraphicsPipeline.GetAddressOf()));
 	assert(hr == S_OK);
-
+	
 	delete[] ied;
 }
 
@@ -97,6 +105,19 @@ uint32_t SampleRenderV2::D3D12Shader::GetStride() const
 uint32_t SampleRenderV2::D3D12Shader::GetOffset() const
 {
 	return 0;
+}
+
+void SampleRenderV2::D3D12Shader::BindSmallBuffer(const void* data, size_t size, uint32_t bindingSlot)
+{
+	if (size != m_SmallBufferLayout.GetElement(bindingSlot).GetSize())
+		throw SizeMismatchException(size, m_SmallBufferLayout.GetElement(bindingSlot).GetSize());
+	auto cmdList = (*m_Context)->GetCurrentCommandList();
+	auto smallStride = (*m_Context)->GetSmallBufferAttachment();
+	cmdList->SetGraphicsRoot32BitConstants(bindingSlot, size / smallStride, data, m_SmallBufferLayout.GetElement(bindingSlot).GetOffset() / smallStride);
+}
+
+void SampleRenderV2::D3D12Shader::BindDescriptors()
+{
 }
 
 void SampleRenderV2::D3D12Shader::CreateGraphicsRootSignature(ID3D12RootSignature** rootSignature, ID3D12Device10* device)

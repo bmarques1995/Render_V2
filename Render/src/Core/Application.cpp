@@ -2,6 +2,7 @@
 #include "Console.hpp"
 #include <imgui/imgui.h>
 #include "CompilerExceptions.hpp"
+#include <UniformsLayout.hpp>
 
 SampleRenderV2::Application* SampleRenderV2::Application::s_AppSingleton = nullptr;
 bool SampleRenderV2::Application::s_SingletonEnabled = false;
@@ -9,11 +10,20 @@ bool SampleRenderV2::Application::s_SingletonEnabled = false;
 SampleRenderV2::Application::Application()
 {
 	EnableSingleton(this);
+
+	m_SmallMVP = {
+		Eigen::Matrix4f::Identity()
+	};
+
 	SampleRenderV2::Console::Init();
 	m_Starter.reset(new ApplicationStarter("render.json"));
 	m_Window.reset(Window::Instantiate());
 	m_Context.reset(GraphicsContext::Instantiate(m_Window.get(), 3));
+	//m_Context->SetClearColor(0x27/255.0f, 0xae/255.0f, 0x60/255.0f, 1.0f);
 	m_Window->ConnectResizer(std::bind(&GraphicsContext::WindowResize, m_Context.get(), std::placeholders::_1, std::placeholders::_2));
+	std::stringstream buffer;
+	buffer << "SampleRender Window [" << (m_Starter->GetCurrentAPI() == GraphicsAPI::SAMPLE_RENDER_GRAPHICS_API_VK ? "Vulkan" : "D3D12") << "]";
+	m_Window->ResetTitle(buffer.str());
 
 	ImguiContext::StartImgui();
 
@@ -40,7 +50,12 @@ SampleRenderV2::Application::Application()
 			{ShaderDataType::Float4, "COLOR", false}
 		});
 
-	m_Shader.reset(Shader::Instantiate(&m_Context, "./assets/shaders/HelloTriangle", layout));
+	SmallBufferLayout smallBufferLayout(
+		{
+			{ 0, 64, 0, m_Context->GetSmallBufferAttachment() }
+		}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
+
+	m_Shader.reset(Shader::Instantiate(&m_Context, "./assets/shaders/HelloTriangle", layout, smallBufferLayout));
 	m_VertexBuffer.reset(VertexBuffer::Instantiate(&m_Context, (const void*)&vBuffer[0], sizeof(vBuffer), layout.GetStride()));
 	m_IndexBuffer.reset(IndexBuffer::Instantiate(&m_Context, (const void*)&iBuffer[0], sizeof(iBuffer) / sizeof(uint32_t)));
 }
@@ -79,6 +94,7 @@ void SampleRenderV2::Application::Run()
 							layer->OnUpdate();
 						//m_Context->Draw(m_IndexBuffer->GetCount());
 						m_Shader->Stage();
+						m_Shader->BindSmallBuffer(&m_SmallMVP.model(0, 0), sizeof(m_SmallMVP), 0);
 						m_VertexBuffer->Stage();
 						m_IndexBuffer->Stage();
 						m_Context->Draw(m_IndexBuffer->GetCount());

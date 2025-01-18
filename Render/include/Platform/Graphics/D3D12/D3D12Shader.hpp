@@ -11,13 +11,16 @@ namespace SampleRenderV2
 	class SAMPLE_RENDER_DLL_COMMAND D3D12Shader : public Shader
 	{
 	public:
-		D3D12Shader(const std::shared_ptr<D3D12Context>* context, std::string json_controller_path, InputBufferLayout layout);
+		D3D12Shader(const std::shared_ptr<D3D12Context>* context, std::string json_controller_path, InputBufferLayout layout, SmallBufferLayout smallBufferLayout);
 		~D3D12Shader();
 
 		void Stage() override;
 		virtual uint32_t GetStride() const override;
 		virtual uint32_t GetOffset() const override;
 
+		void BindSmallBuffer(const void* data, size_t size, uint32_t bindingSlot) override;
+
+		void BindDescriptors() override;
 	private:
 
 		void CreateGraphicsRootSignature(ID3D12RootSignature** rootSignature, ID3D12Device10* device);
@@ -35,11 +38,14 @@ namespace SampleRenderV2
 		Json::Value m_PipelineInfo;
 
 		InputBufferLayout m_Layout;
+		SmallBufferLayout m_SmallBufferLayout;
 		const std::shared_ptr<D3D12Context>* m_Context;
 		std::string m_ShaderDir;
 		ComPointer<IDxcBlob> m_RootBlob;
 		ComPointer<ID3D12PipelineState> m_GraphicsPipeline;
 		std::unordered_map<std::string, ComPointer<IDxcBlob>> m_ShaderBlobs;
 		ComPointer<ID3D12RootSignature> m_RootSignature;
+		/*in bytes*/
+		uint32_t m_RootSignatureSize = 0;
 	};
 }

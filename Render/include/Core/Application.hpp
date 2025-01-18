@@ -13,6 +13,7 @@
 #include "Buffer.hpp"
 #include <CommonException.hpp>
 #include <memory>
+#include <Eigen/Eigen>
 
 namespace SampleRenderV2
 {
@@ -54,6 +55,13 @@ namespace SampleRenderV2
 			3,4,5,
 			0,1,2,
 		};
+
+		struct SmallMVP
+		{
+			Eigen::Matrix4f model;
+		};
+
+		SmallMVP m_SmallMVP;
 
 		std::shared_ptr<Window> m_Window;
 		std::shared_ptr<GraphicsContext> m_Context;
