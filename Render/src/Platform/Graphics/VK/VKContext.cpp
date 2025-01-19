@@ -50,9 +50,10 @@ const std::vector<const char*> SampleRenderV2::VKContext::deviceExtensions =
 SampleRenderV2::VKContext::VKContext(const Window* windowHandle, uint32_t framesInFlight) :
     m_FramesInFlight(framesInFlight), m_IsVSyncEnabled(true)
 {
-    m_ClearColor.float32[0] = 1.0f;
-    m_ClearColor.float32[1] = 76.0f / 255.0f;
-    m_ClearColor.float32[2] = 48.0f / 255.0f;
+    //#d35400
+    m_ClearColor.float32[0] = 0xd3 / 255.0f;
+    m_ClearColor.float32[1] = 0x54 / 255.0f;
+    m_ClearColor.float32[2] = 0.0f;
     m_ClearColor.float32[3] = 1.0f;
 
     m_IsWindowClosing = windowHandle->TrackWindowClosing();

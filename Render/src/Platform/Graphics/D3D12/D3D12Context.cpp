@@ -6,7 +6,8 @@
 SampleRenderV2::D3D12Context::D3D12Context(const Window* windowHandle, uint32_t framesInFlight) :
 	m_FramesInFlight(framesInFlight), m_IsVSyncEnabled(true)
 {
-	SetClearColor(.0f, .5f, .25f, 1.0f);
+	//#27ae60
+	SetClearColor(0x27 / 255.0f, 0xae / 255.0f, 0x60 / 255.0f, 1.0f);
 
 #ifdef RENDER_DEBUG_MODE
 	EnableDebug();
