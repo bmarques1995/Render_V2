@@ -7,10 +7,30 @@
 
 namespace SampleRenderV2
 {
+	enum class SAMPLE_SHADER_MNG_DLL_COMMAND BufferType
+	{
+		INVALID_BUFFER_TYPE,
+		UNIFORM_CONSTANT_BUFFER,
+		TEXTURE_BUFFER,
+		SAMPLER_BUFFER
+	};
+
+	enum class AccessLevel
+	{
+		ROOT_BUFFER,
+		DESCRIPTOR_BUFFER
+	};
+
 	class SAMPLE_SHADER_MNG_DLL_COMMAND AttachmentMismatchException : public GraphicsException
 	{
 	public:
 		AttachmentMismatchException(size_t bufferSize, size_t expectedBufferAttachment);
+	};
+
+	class SAMPLE_SHADER_MNG_DLL_COMMAND SignatureMismatchException : public GraphicsException
+	{
+	public:
+		SignatureMismatchException(uint32_t numberOfBuffers);
 	};
 
 	enum SAMPLE_SHADER_MNG_DLL_COMMAND AllowedStages
@@ -55,5 +75,46 @@ namespace SampleRenderV2
 	private:
 		std::unordered_map<uint32_t, SmallBufferElement> m_Buffers;
 		uint32_t m_Stages;
+	};
+
+	class SAMPLE_SHADER_MNG_DLL_COMMAND UniformElement
+	{
+	public:
+		UniformElement();
+		UniformElement(BufferType bufferType, size_t size, uint32_t bindingSlot, uint32_t spaceSet, uint32_t shaderRegister, AccessLevel accessLevel, uint32_t numberOfBuffers, uint32_t bufferAttachment);
+
+		BufferType GetBufferType() const;
+		size_t GetSize() const;
+		uint32_t GetBindingSlot() const;
+		uint32_t GetShaderRegister() const;
+		uint32_t GetSpaceSet() const;
+		AccessLevel GetAccessLevel() const;
+		uint32_t GetNumberOfBuffers() const;
+
+		bool IsSizeValid(uint32_t bufferAttachment);
+
+	private:
+
+		BufferType m_BufferType;
+		size_t m_Size;
+
+		uint32_t m_BindingSlot;
+		uint32_t m_ShaderRegister;
+		uint32_t m_SpaceSet;
+		AccessLevel m_AccessLevel;
+		uint32_t m_NumberOfBuffers;
+	};
+
+	class SAMPLE_SHADER_MNG_DLL_COMMAND UniformLayout
+	{
+	public:
+		UniformLayout(std::initializer_list<UniformElement> m_Elements, uint32_t allowedStages);
+
+		const UniformElement& GetElement(uint32_t shaderRegister);
+		const std::unordered_map<uint32_t, UniformElement>& GetElements();
+		uint32_t GetStages() const;
+	private:
+		uint32_t m_Stages;
+		std::unordered_map<uint32_t, UniformElement> m_Buffers;
 	};
 }

@@ -26,8 +26,8 @@ const std::unordered_map<uint32_t, VkShaderStageFlagBits> SampleRenderV2::VKShad
     {AllowedStages::MESH_STAGE, VK_SHADER_STAGE_MESH_BIT_EXT},
     {AllowedStages::AMPLIFICATION_STAGE, VK_SHADER_STAGE_TASK_BIT_EXT},
 };
-SampleRenderV2::VKShader::VKShader(const std::shared_ptr<VKContext>* context, std::string json_controller_path, InputBufferLayout layout, SmallBufferLayout smallBufferLayout) :
-    m_Context(context), m_Layout(layout), m_SmallBufferLayout(smallBufferLayout)
+SampleRenderV2::VKShader::VKShader(const std::shared_ptr<VKContext>* context, std::string json_controller_path, InputBufferLayout layout, SmallBufferLayout smallBufferLayout, UniformLayout uniformLayout) :
+    m_Context(context), m_Layout(layout), m_SmallBufferLayout(smallBufferLayout), m_UniformLayout(uniformLayout)
 {
     VkResult vkr;
     auto device = (*m_Context)->GetDevice();
@@ -200,6 +200,10 @@ void SampleRenderV2::VKShader::BindSmallBuffer(const void* data, size_t size, ui
 }
 
 void SampleRenderV2::VKShader::BindDescriptors()
+{
+}
+
+void SampleRenderV2::VKShader::UpdateCBuffer(const void* data, size_t size, uint32_t shaderRegister, uint32_t tableIndex)
 {
 }
 

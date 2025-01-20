@@ -61,7 +61,16 @@ namespace SampleRenderV2
 			Eigen::Matrix4f model;
 		};
 
+		struct CompleteMVP
+		{
+			Eigen::Matrix4f model;
+			Eigen::Matrix4f view;
+			Eigen::Matrix4f projection;
+			Eigen::Matrix4f fill;
+		};
+
 		SmallMVP m_SmallMVP;
+		CompleteMVP m_CompleteMVP;
 
 		std::shared_ptr<Window> m_Window;
 		std::shared_ptr<GraphicsContext> m_Context;

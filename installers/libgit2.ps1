@@ -4,6 +4,7 @@ param (
     [string]$moduleDestination
 )
 
+
 if (($buildMode -eq "Debug" -or $buildMode -eq "Release") -and ($installPrefix -ne "") -and ($moduleDestination -ne ""))
 {
     git clone --recursive https://github.com/libgit2/libgit2.git "$moduleDestination/modules/libgit2"

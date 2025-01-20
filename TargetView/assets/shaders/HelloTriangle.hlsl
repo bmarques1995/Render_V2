@@ -1,8 +1,13 @@
 #pragma pack_matrix(column_major)
 
+//CBV(b1),\
+//CBV(b2),\
+
 #define rs_controller \
-RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT), \
+RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT\
+| DENY_GEOMETRY_SHADER_ROOT_ACCESS ), \
 RootConstants(num32BitConstants=16, b0), \
+DescriptorTable(CBV(b1, numDescriptors = 2)), \
 StaticSampler( s2,\
                 filter = FILTER_ANISOTROPIC,\
                 addressU = TEXTURE_ADDRESS_WRAP,\
@@ -22,6 +27,22 @@ struct SmallMVP
     float4x4 M;
 };
 
+struct CompleteMVP
+{
+    float4x4 M;
+    float4x4 V;
+    float4x4 P;
+    float4x4 F;
+};
+
+struct SSBO
+{
+    float4x4 M;
+    float4x4 V;
+    float4x4 P;
+    float4x4 F;
+};
+
 #ifdef VK_HLSL
 
 [[vk::push_constant]] SmallMVP m_SmallMVP;
@@ -34,6 +55,18 @@ cbuffer u_SmallMVP : register(b0)
 };
 
 #endif
+
+[[vk::binding(1, 0)]]
+cbuffer u_CompleteMVP : register(b1)
+{
+    CompleteMVP m_CompleteMVP;
+};
+
+[[vk::binding(2, 0)]]
+cbuffer u_SSBO : register(b2)
+{
+    SSBO m_SSBO;
+};
 
 struct VSInput
 {
@@ -51,6 +84,8 @@ PSInput vs_main(VSInput vsInput)
 {
     PSInput vsoutput;
     vsoutput.pos = mul(float4(vsInput.pos, 1.0f), m_SmallMVP.M);
+    vsoutput.pos = mul(vsoutput.pos, m_CompleteMVP.M);
+    vsoutput.pos = mul(vsoutput.pos, m_SSBO.M);
     vsoutput.col = vsInput.col;
     return vsoutput;
 }

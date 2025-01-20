@@ -24,6 +24,8 @@ namespace SampleRenderV2
 
 		virtual void BindDescriptors() = 0;
 
-		static Shader* Instantiate(const std::shared_ptr<GraphicsContext>* context, std::string json_basepath, InputBufferLayout layout, SmallBufferLayout smallBufferLayout);
+		virtual void UpdateCBuffer(const void* data, size_t size, uint32_t shaderRegister, uint32_t tableIndex) = 0;
+
+		static Shader* Instantiate(const std::shared_ptr<GraphicsContext>* context, std::string json_basepath, InputBufferLayout layout, SmallBufferLayout smallBufferLayout, UniformLayout uniformLayout);
 	};
 }

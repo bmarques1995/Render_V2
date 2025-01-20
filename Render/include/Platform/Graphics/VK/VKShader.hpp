@@ -11,7 +11,7 @@ namespace SampleRenderV2
 	class SAMPLE_RENDER_DLL_COMMAND VKShader : public Shader
 	{
 	public:
-		VKShader(const std::shared_ptr<VKContext>* context, std::string json_controller_path, InputBufferLayout layout, SmallBufferLayout smallBufferLayout);
+		VKShader(const std::shared_ptr<VKContext>* context, std::string json_controller_path, InputBufferLayout layout, SmallBufferLayout smallBufferLayout, UniformLayout uniformLayout);
 		~VKShader();
 
 		void Stage() override;
@@ -21,6 +21,8 @@ namespace SampleRenderV2
 		void BindSmallBuffer(const void* data, size_t size, uint32_t bindingSlot) override;
 
 		void BindDescriptors() override;
+
+		void UpdateCBuffer(const void* data, size_t size, uint32_t shaderRegister, uint32_t tableIndex) override;
 	private:
 
 		void CreateDescriptorSetLayout();
@@ -46,6 +48,7 @@ namespace SampleRenderV2
 		VkDescriptorSetLayout m_RootSignature;
 		InputBufferLayout m_Layout;
 		SmallBufferLayout m_SmallBufferLayout;
+		UniformLayout m_UniformLayout;
 		const std::shared_ptr<VKContext>* m_Context;
 		std::string m_ShaderDir;
 		VkPipeline m_GraphicsPipeline;
