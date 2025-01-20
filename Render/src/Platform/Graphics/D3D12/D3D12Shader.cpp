@@ -76,14 +76,19 @@ SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* co
 	graphicsDesc.SampleDesc.Count = 1;
 	graphicsDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
+	size_t i = 0;
 	for (auto& uniform : uniforms)
 	{
+		std::wstringstream wss;
+		wss << "CBV " << i;
 		unsigned char* data = new unsigned char[uniform.second.GetSize()];
 		if (uniform.second.GetAccessLevel() == AccessLevel::ROOT_BUFFER)
 			PreallocateRootCBuffer(data, uniform.second);
 		else
-			PreallocateTabledCBuffer(data, uniform.second);
+			PreallocateTabledCBuffer(data, uniform.second, wss.str());
 		delete[] data;
+		wss.str(L"");
+		i++;
 	}
 
 	for (auto it = s_GraphicsPipelineStages.begin(); it != s_GraphicsPipelineStages.end(); it++)
@@ -140,6 +145,7 @@ void SampleRenderV2::D3D12Shader::BindDescriptors()
 	{
 		cmdList->SetGraphicsRootConstantBufferView(rootDescriptor.first, m_CBVResources[(((uint64_t)rootDescriptor.first << 32) + 1)]->GetGPUVirtualAddress());
 	}
+	
 	for (auto& tabledDescriptor : m_TabledDescriptors)
 	{
 		cmdList->SetDescriptorHeaps(1, tabledDescriptor.second.GetAddressOf());
@@ -159,13 +165,14 @@ bool SampleRenderV2::D3D12Shader::IsCBufferValid(size_t size)
 
 void SampleRenderV2::D3D12Shader::PreallocateRootCBuffer(const void* data, UniformElement uniformElement)
 {
+	uint64_t bufferLocation = (((uint64_t)uniformElement.GetShaderRegister() << 32) + 1);
 	if (!IsCBufferValid(uniformElement.GetSize()))
 		throw AttachmentMismatchException(uniformElement.GetSize(), (*m_Context)->GetSmallBufferAttachment());
 
 	auto device = (*m_Context)->GetDevicePtr();
 	HRESULT hr;
 
-	m_CBVResources[(((uint64_t)uniformElement.GetShaderRegister() << 32) + 1)] = nullptr;
+	m_CBVResources[bufferLocation] = nullptr;
 	m_RootDescriptors[uniformElement.GetShaderRegister()] = nullptr;
 
 	D3D12_DESCRIPTOR_HEAP_DESC cbvDescriptorHeapDesc{};
@@ -205,13 +212,13 @@ void SampleRenderV2::D3D12Shader::PreallocateRootCBuffer(const void* data, Unifo
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		nullptr,
-		IID_PPV_ARGS(m_CBVResources[(( (uint64_t)uniformElement.GetShaderRegister()) << 32 + 1)].GetAddressOf()));
+		IID_PPV_ARGS(m_CBVResources[bufferLocation].GetAddressOf()));
 
 	assert(hr == S_OK);
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 
-	cbvDesc.BufferLocation = m_CBVResources[(((uint64_t)uniformElement.GetShaderRegister() << 32) + 1)]->GetGPUVirtualAddress();
+	cbvDesc.BufferLocation = m_CBVResources[bufferLocation]->GetGPUVirtualAddress();
 	cbvDesc.SizeInBytes = uniformElement.GetSize();
 
 	device->CreateConstantBufferView(&cbvDesc, cbvHeapStartHandle);
@@ -219,7 +226,7 @@ void SampleRenderV2::D3D12Shader::PreallocateRootCBuffer(const void* data, Unifo
 	MapCBuffer(data, uniformElement.GetSize(), uniformElement.GetShaderRegister());
 }
 
-void SampleRenderV2::D3D12Shader::PreallocateTabledCBuffer(const void* data, UniformElement uniformElement)
+void SampleRenderV2::D3D12Shader::PreallocateTabledCBuffer(const void* data, UniformElement uniformElement, std::wstring debugName)
 {
 	if (!IsCBufferValid(uniformElement.GetSize()))
 		throw AttachmentMismatchException(uniformElement.GetSize(), (*m_Context)->GetSmallBufferAttachment());
@@ -238,6 +245,8 @@ void SampleRenderV2::D3D12Shader::PreallocateTabledCBuffer(const void* data, Uni
 	{
 		throw std::runtime_error("Failed to create descriptor heap");
 	}
+
+	m_TabledDescriptors[uniformElement.GetShaderRegister()]->SetName(debugName.c_str());
 
 	// 5. Create CBVs and place them in the descriptor heap
 	D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle(m_TabledDescriptors[uniformElement.GetShaderRegister()]->GetCPUDescriptorHandleForHeapStart());

@@ -8,6 +8,7 @@ public:
 	ExampleLayer();
 	~ExampleLayer() = default;
 
+	void OnImGuiRender() override;
 	void OnAttach() override;
 	void OnDetach() override;
 	void OnUpdate() override;

@@ -5,9 +5,12 @@
 
 #define rs_controller \
 RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT\
-| DENY_GEOMETRY_SHADER_ROOT_ACCESS ), \
+| DENY_GEOMETRY_SHADER_ROOT_ACCESS\
+| DENY_HULL_SHADER_ROOT_ACCESS \
+| DENY_DOMAIN_SHADER_ROOT_ACCESS), \
 RootConstants(num32BitConstants=16, b0), \
-DescriptorTable(CBV(b1, numDescriptors = 2)), \
+CBV(b1),\
+CBV(b2),\
 StaticSampler( s2,\
                 filter = FILTER_ANISOTROPIC,\
                 addressU = TEXTURE_ADDRESS_WRAP,\

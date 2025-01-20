@@ -11,6 +11,8 @@ namespace SampleRenderV2
 		Layer(std::string_view name = "Debug");
 		virtual ~Layer();
 
+		virtual void OnImGuiRender() {}
+
 		virtual void OnAttach() {}
 		virtual void OnDetach() {}
 		virtual void OnUpdate() {}

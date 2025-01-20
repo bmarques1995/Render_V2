@@ -33,7 +33,7 @@ namespace SampleRenderV2
 
 		bool IsCBufferValid(size_t size);
 		void PreallocateRootCBuffer(const void* data, UniformElement uniformElement);
-		void PreallocateTabledCBuffer(const void* data, UniformElement uniformElement);
+		void PreallocateTabledCBuffer(const void* data, UniformElement uniformElement, std::wstring debugName);
 		void MapCBuffer(const void* data, size_t size, uint32_t shaderRegister, uint32_t tableIndex = 1);
 
 		void CreateGraphicsRootSignature(ID3D12RootSignature** rootSignature, ID3D12Device10* device);
@@ -52,6 +52,7 @@ namespace SampleRenderV2
 
 		std::unordered_map<uint32_t, ComPointer<ID3D12DescriptorHeap>> m_RootDescriptors;
 		std::unordered_map<uint32_t, ComPointer<ID3D12DescriptorHeap>> m_TabledDescriptors;
+		std::vector<const ID3D12DescriptorHeap*> m_BindableDescriptors;
 		//descriptor index, resource index
 		std::unordered_map<uint64_t, ComPointer<ID3D12Resource2>> m_CBVResources;
 

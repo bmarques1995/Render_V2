@@ -8,6 +8,13 @@
 
 namespace SampleRenderV2
 {
+	//Resource Memomy View
+	struct RM
+	{
+		VkBuffer Resource;
+		VkDeviceMemory Memory;
+	};
+
 	class SAMPLE_RENDER_DLL_COMMAND VKShader : public Shader
 	{
 	public:
@@ -25,7 +32,16 @@ namespace SampleRenderV2
 		void UpdateCBuffer(const void* data, size_t size, uint32_t shaderRegister, uint32_t tableIndex) override;
 	private:
 
+		void PreallocatesDescSets();
+
 		void CreateDescriptorSetLayout();
+		void CreateDescriptorPool();
+		void CreateDescriptorSets();
+
+		bool IsUniformValid(size_t size);
+		void PreallocateUniform(const void* data, UniformElement uniformElement, uint32_t offset);
+		void MapUniform(const void* data, size_t size, uint32_t shaderRegister, uint32_t offset);
+		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 		void PushShader(std::string_view stage, VkPipelineShaderStageCreateInfo* graphicsDesc);
 		void InitJsonAndPaths(std::string json_controller_path);
@@ -35,6 +51,8 @@ namespace SampleRenderV2
 		void SetDepthStencil(VkPipelineDepthStencilStateCreateInfo* depthStencil);
 
 		static VkFormat GetNativeFormat(ShaderDataType type);
+		static VkBufferUsageFlagBits GetNativeBufferUsage(BufferType type);
+		static VkDescriptorType GetNativeDescriptorType(BufferType type);
 		static const std::list<std::string> s_GraphicsPipelineStages;
 
 		static const std::unordered_map<std::string, VkShaderStageFlagBits> s_StageCaster;
@@ -43,9 +61,15 @@ namespace SampleRenderV2
 		std::unordered_map<std::string, VkShaderModule> m_Modules;
 		std::unordered_map<std::string, std::string> m_ModulesEntrypoint;
 
+		std::unordered_map<uint32_t, VkDescriptorSet> m_DescriptorSets;
+		std::vector<VkDescriptorSet> m_BindableDescriptorSets;
+
+		std::unordered_map<uint32_t, RM> m_Uniforms;
+
 		Json::Value m_PipelineInfo;
 
 		VkDescriptorSetLayout m_RootSignature;
+		VkDescriptorPool m_DescriptorPool;
 		InputBufferLayout m_Layout;
 		SmallBufferLayout m_SmallBufferLayout;
 		UniformLayout m_UniformLayout;
