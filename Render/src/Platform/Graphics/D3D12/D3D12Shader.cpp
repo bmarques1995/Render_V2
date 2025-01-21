@@ -1,3 +1,5 @@
+#ifdef RENDER_USES_WINDOWS
+
 #include "D3D12Shader.hpp"
 #include "FileHandler.hpp"
 #include <filesystem>
@@ -463,3 +465,5 @@ D3D12_RESOURCE_DIMENSION SampleRenderV2::D3D12Shader::GetNativeDimension(BufferT
 		return D3D12_RESOURCE_DIMENSION_UNKNOWN;
 	}
 }
+
+#endif

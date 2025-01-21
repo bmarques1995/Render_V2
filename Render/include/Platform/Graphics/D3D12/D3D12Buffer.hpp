@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef RENDER_USES_WINDOWS
+
 #include "D3D12Context.hpp"
 #include "Buffer.hpp"
 #include <memory>
@@ -42,3 +44,5 @@ namespace SampleRenderV2
 		D3D12_INDEX_BUFFER_VIEW m_IndexBufferView;
 	};
 }
+
+#endif

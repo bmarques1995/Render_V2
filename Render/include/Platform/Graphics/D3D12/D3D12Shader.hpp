@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef RENDER_USES_WINDOWS
+
 #include "Shader.hpp"
 #include "D3D12Context.hpp"
 #include "DXCSafeInclude.hpp"
@@ -72,3 +74,5 @@ namespace SampleRenderV2
 		uint32_t m_RootSignatureSize = 0;
 	};
 }
+
+#endif

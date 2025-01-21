@@ -1,3 +1,5 @@
+#ifdef RENDER_USES_WINDOWS
+
 #include "D3D12Buffer.hpp"
 #include <cassert>
 
@@ -101,3 +103,5 @@ uint32_t SampleRenderV2::D3D12IndexBuffer::GetCount() const
 {
 	return m_Count;
 }
+
+#endif

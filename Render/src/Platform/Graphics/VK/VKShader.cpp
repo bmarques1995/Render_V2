@@ -178,6 +178,13 @@ SampleRenderV2::VKShader::~VKShader()
 {
     auto device = (*m_Context)->GetDevice();
     vkDeviceWaitIdle(device);
+    for (auto& i : m_Uniforms)
+    {
+        vkDestroyBuffer(device, i.second.Resource, nullptr);
+        vkFreeMemory(device, i.second.Memory, nullptr);
+    }
+    vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);
+    vkDestroyDescriptorSetLayout(device, m_RootSignature, nullptr);
     vkDestroyPipeline(device, m_GraphicsPipeline, nullptr);
     vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
 }

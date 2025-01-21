@@ -6,6 +6,7 @@
 #include "GraphicsContext.hpp"
 #include "ImguiWindowController.hpp"
 #include "ImguiContext.hpp"
+#include "CopyPipeline.hpp"
 #include "CSOCompiler.hpp"
 #include "SPVCompiler.hpp"
 #include "LayerStack.hpp"
@@ -14,6 +15,7 @@
 #include <CommonException.hpp>
 #include <memory>
 #include <Eigen/Eigen>
+
 
 namespace SampleRenderV2
 {
@@ -76,6 +78,7 @@ namespace SampleRenderV2
 		std::shared_ptr<GraphicsContext> m_Context;
 		std::shared_ptr<ImguiWindowController> m_ImguiWindowController;
 		std::shared_ptr<Shader> m_Shader;
+		std::shared_ptr<CopyPipeline> m_CopyPipeline;
 		std::shared_ptr<VertexBuffer> m_VertexBuffer;
 		std::shared_ptr<IndexBuffer> m_IndexBuffer;
 

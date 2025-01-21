@@ -16,6 +16,7 @@ namespace SampleRenderV2
 	class SAMPLE_RENDER_DLL_COMMAND Shader
 	{
 	public:
+		virtual ~Shader() = default;
 		virtual void Stage() = 0;
 		virtual uint32_t GetStride() const = 0;
 		virtual uint32_t GetOffset() const = 0;

@@ -26,6 +26,7 @@ SampleRenderV2::Application::Application()
 	m_Starter.reset(new ApplicationStarter("render.json"));
 	m_Window.reset(Window::Instantiate());
 	m_Context.reset(GraphicsContext::Instantiate(m_Window.get(), 3));
+	m_CopyPipeline.reset(CopyPipeline::Instantiate(&m_Context));
 	//m_Context->SetClearColor(0x27/255.0f, 0xae/255.0f, 0x60/255.0f, 1.0f);
 	m_Window->ConnectResizer(std::bind(&GraphicsContext::WindowResize, m_Context.get(), std::placeholders::_1, std::placeholders::_2));
 	std::stringstream buffer;
@@ -93,6 +94,7 @@ SampleRenderV2::Application::~Application()
 	m_ImguiContext.reset();
 	m_ImguiWindowController.reset();
 	ImguiContext::EndImgui();
+	m_CopyPipeline.reset();
 	m_Context.reset();
 	m_Window.reset();
 	SampleRenderV2::Console::End();
