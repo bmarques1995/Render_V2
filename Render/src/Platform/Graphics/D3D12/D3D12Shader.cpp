@@ -26,8 +26,8 @@ const std::list<std::string> SampleRenderV2::D3D12Shader::s_GraphicsPipelineStag
 };
 
 SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* context, std::string json_controller_path, InputBufferLayout layout,
-	SmallBufferLayout smallBufferLayout, UniformLayout uniformLayout, TextureLayout textureLayout) :
-	m_Context(context), m_Layout(layout), m_SmallBufferLayout(smallBufferLayout), m_UniformLayout(uniformLayout), m_TextureLayout(textureLayout)
+	SmallBufferLayout smallBufferLayout, UniformLayout uniformLayout, TextureLayout textureLayout, SamplerLayout samplerLayout) :
+	m_Context(context), m_Layout(layout), m_SmallBufferLayout(smallBufferLayout), m_UniformLayout(uniformLayout), m_TextureLayout(textureLayout), m_SamplerLayout(samplerLayout)
 {
 	HRESULT hr;
 	auto device = (*m_Context)->GetDevicePtr();
@@ -58,13 +58,10 @@ SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* co
 	if(textureCount > 0)
 		m_RootSignatureSize += 4;
 
-	PreallocateTextureDescriptors(textureCount, rootSigIndex);
-
-	for (auto& texture : m_TextureLayout.GetElements())
-	{
-		CreateTexture(texture.second);
-		CopyTextureBuffer(texture.second);
-	}
+	auto samplerCount = m_SamplerLayout.GetElements().size();
+	auto samplerRootSigIndex = m_SamplerLayout.GetElements().begin()->second.GetShaderRegister();
+	if (samplerCount > 0)
+		m_RootSignatureSize += 4;
 
 	auto nativeElements = m_Layout.GetElements();
 	D3D12_INPUT_ELEMENT_DESC* ied = new D3D12_INPUT_ELEMENT_DESC[nativeElements.size()];
@@ -111,6 +108,33 @@ SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* co
 		delete[] data;
 		wss.str(L"");
 		i++;
+	}
+
+	PreallocateSamplerDescriptors(samplerCount, samplerRootSigIndex);
+
+	for (auto& sampler : m_SamplerLayout.GetElements())
+	{
+		CreateSampler(sampler.second);
+	}
+
+	PreallocateTextureDescriptors(textureCount, rootSigIndex);
+
+	/*auto device = (*m_Context)->GetDevicePtr();
+	HRESULT hr;
+
+	D3D12_DESCRIPTOR_HEAP_DESC srvDescriptorHeapDesc{};
+	srvDescriptorHeapDesc.Type = GetNativeHeapType(BufferType::SAMPLER_BUFFER);
+	srvDescriptorHeapDesc.NumDescriptors = 1;
+	srvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	srvDescriptorHeapDesc.NodeMask = 0;
+
+	hr = device->CreateDescriptorHeap(&srvDescriptorHeapDesc, IID_PPV_ARGS(m_Samplers[samplerElement.GetBindingSlot()].GetAddressOf()));
+	assert(hr == S_OK);*/
+
+	for (auto& texture : m_TextureLayout.GetElements())
+	{
+		CreateTexture(texture.second);
+		CopyTextureBuffer(texture.second);
 	}
 
 	for (auto it = s_GraphicsPipelineStages.begin(); it != s_GraphicsPipelineStages.end(); it++)
@@ -178,6 +202,44 @@ void SampleRenderV2::D3D12Shader::BindDescriptors()
 void SampleRenderV2::D3D12Shader::UpdateCBuffer(const void* data, size_t size, uint32_t shaderRegister, uint32_t tableIndex)
 {
 	MapCBuffer(data, size, shaderRegister, tableIndex);
+}
+
+void SampleRenderV2::D3D12Shader::PreallocateSamplerDescriptors(uint32_t numOfSamplers, uint32_t rootSigIndex)
+{
+	auto device = (*m_Context)->GetDevicePtr();
+	HRESULT hr;
+
+	D3D12_DESCRIPTOR_HEAP_DESC srvDescriptorHeapDesc{};
+	srvDescriptorHeapDesc.Type = GetNativeHeapType(BufferType::SAMPLER_BUFFER);
+	srvDescriptorHeapDesc.NumDescriptors = numOfSamplers;
+	srvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	srvDescriptorHeapDesc.NodeMask = 0;
+
+	hr = device->CreateDescriptorHeap(&srvDescriptorHeapDesc, IID_PPV_ARGS(m_SamplerDescriptors[rootSigIndex].GetAddressOf()));
+	assert(hr == S_OK);
+}
+
+void SampleRenderV2::D3D12Shader::CreateSampler(SamplerElement samplerElement)
+{
+	auto device = (*m_Context)->GetDevicePtr();
+	HRESULT hr;
+
+	D3D12_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = GetNativeFilter(samplerElement.GetFilter());
+	samplerDesc.AddressU = GetNativeAddressMode(samplerElement.GetAddressMode());
+	samplerDesc.AddressV = GetNativeAddressMode(samplerElement.GetAddressMode());
+	samplerDesc.AddressW = GetNativeAddressMode(samplerElement.GetAddressMode());
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1 << (uint32_t)samplerElement.GetAnisotropicFactor();
+	samplerDesc.ComparisonFunc = (D3D12_COMPARISON_FUNC)((uint32_t)samplerElement.GetComparisonPassMode() + 1);
+	samplerDesc.MinLOD = 0.0f;
+	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+
+	auto samplerHeapStartHandle = m_SamplerDescriptors[samplerElement.GetShaderRegister()]->GetCPUDescriptorHandleForHeapStart();
+	UINT samplerDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+	samplerHeapStartHandle.ptr += (samplerElement.GetSamplerIndex() * samplerDescriptorSize);
+
+	device->CreateSampler(&samplerDesc, samplerHeapStartHandle);
 }
 
 void SampleRenderV2::D3D12Shader::PreallocateTextureDescriptors(uint32_t numOfTextures, uint32_t rootSigIndex)
@@ -683,6 +745,38 @@ D3D12_RESOURCE_DIMENSION SampleRenderV2::D3D12Shader::GetNativeTensor(TextureTen
 		return D3D12_RESOURCE_DIMENSION_TEXTURE3D;
 	default:
 		return D3D12_RESOURCE_DIMENSION_UNKNOWN;
+	}
+}
+
+D3D12_FILTER SampleRenderV2::D3D12Shader::GetNativeFilter(SamplerFilter filter)
+{
+	switch (filter)
+	{
+	default:
+	case SamplerFilter::LINEAR:
+		return D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	case SamplerFilter::NEAREST:
+		return D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
+	case SamplerFilter::ANISOTROPIC:
+		return D3D12_FILTER_ANISOTROPIC;
+	}
+}
+
+D3D12_TEXTURE_ADDRESS_MODE SampleRenderV2::D3D12Shader::GetNativeAddressMode(AddressMode addressMode)
+{
+	switch (addressMode)
+	{
+	default:
+	case AddressMode::REPEAT:
+		return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	case AddressMode::MIRROR:
+		return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+	case AddressMode::CLAMP:
+		return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	case AddressMode::BORDER:
+		return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	case AddressMode::MIRROR_ONCE:
+		return D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE;
 	}
 }
 

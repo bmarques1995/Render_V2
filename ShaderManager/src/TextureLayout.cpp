@@ -87,18 +87,18 @@ SampleRenderV2::TextureLayout::TextureLayout(std::initializer_list<TextureElemen
 		
 	for (auto& element : elements)
 	{
-		uint64_t textureLocation = (element.GetShaderRegister() << 32) + element.GetTextureIndex();
+		uint64_t textureLocation = ((uint64_t)element.GetShaderRegister() << 32) + element.GetTextureIndex();
 		m_Textures[textureLocation] = element;
 	}
 }
 
 const SampleRenderV2::TextureElement& SampleRenderV2::TextureLayout::GetElement(uint32_t shaderRegister, uint32_t textureIndex)
 {
-	uint64_t textureLocation = (shaderRegister << 32) + textureIndex;
+	uint64_t textureLocation = ((uint64_t)shaderRegister << 32) + textureIndex;
 	return m_Textures[textureLocation];
 }
 
-const std::unordered_map<uint32_t, SampleRenderV2::TextureElement>& SampleRenderV2::TextureLayout::GetElements()
+const std::unordered_map<uint64_t, SampleRenderV2::TextureElement>& SampleRenderV2::TextureLayout::GetElements()
 {
 	return m_Textures;
 }

@@ -48,12 +48,12 @@ namespace SampleRenderV2
 		TextureLayout(std::initializer_list<TextureElement> elements, uint32_t allowedStages);
 
 		const TextureElement& GetElement(uint32_t shaderRegister, uint32_t textureIndex);
-		const std::unordered_map<uint32_t, TextureElement>& GetElements();
+		const std::unordered_map<uint64_t, TextureElement>& GetElements();
 
 		uint32_t GetStages() const;
 
 	private:
-		std::unordered_map<uint32_t, TextureElement> m_Textures;
+		std::unordered_map<uint64_t, TextureElement> m_Textures;
 		uint32_t m_Stages;
 	};
 }

@@ -12,19 +12,20 @@ RootConstants(num32BitConstants=16, b0), \
 CBV(b1),\
 CBV(b2),\
 DescriptorTable(SRV(t1, numDescriptors = 2)), \
-StaticSampler( s2,\
-                filter = FILTER_ANISOTROPIC,\
-                addressU = TEXTURE_ADDRESS_WRAP,\
-                addressV = TEXTURE_ADDRESS_WRAP,\
-                addressW = TEXTURE_ADDRESS_WRAP,\
-                mipLODBias = 0.f,\
-                maxAnisotropy = 16,\
-                comparisonFunc = COMPARISON_LESS_EQUAL,\
-                borderColor = STATIC_BORDER_COLOR_OPAQUE_WHITE,\
-                minLOD = 0.f,\
-                maxLOD = 3.402823466e+38f,\
-                space = 0,\
-                visibility = SHADER_VISIBILITY_ALL), \
+DescriptorTable(Sampler(s1, numDescriptors = 2)), \
+//StaticSampler(s3,\
+//                filter = FILTER_ANISOTROPIC,\
+//                addressU = TEXTURE_ADDRESS_WRAP,\
+//                addressV = TEXTURE_ADDRESS_WRAP,\
+//                addressW = TEXTURE_ADDRESS_WRAP,\
+//                mipLODBias = 0.f,\
+//                maxAnisotropy = 16,\
+//                comparisonFunc = COMPARISON_LESS_EQUAL,\
+//                borderColor = STATIC_BORDER_COLOR_OPAQUE_WHITE,\
+//                minLOD = 0.f,\
+//                maxLOD = 3.402823466e+38f,\
+//                space = 0,\
+//                visibility = SHADER_VISIBILITY_ALL), \
 
 struct SmallMVP
 {
@@ -75,7 +76,10 @@ cbuffer u_SSBO : register(b2)
 [[vk::binding(3, 0)]] Texture2D textureChecker : register(t1);
 [[vk::binding(4, 0)]] Texture2D textureChecker2 : register(t2);
 
-[[vk::binding(5, 0)]] SamplerState staticSampler : register(s2);
+[[vk::binding(5, 0)]] SamplerState dynamicSampler : register(s1);
+[[vk::binding(6, 0)]] SamplerState dynamicSampler2 : register(s2);
+
+//SamplerState staticSampler : register(s3);
 
 struct VSInput
 {
@@ -104,8 +108,13 @@ PSInput vs_main(VSInput vsInput)
 
 float4 ps_main(PSInput psInput) : SV_TARGET0
 {
-    float4 pixel1 = textureChecker.SampleLevel(staticSampler, psInput.txc, 0.0f);
-    float4 pixel2 = textureChecker2.SampleLevel(staticSampler, psInput.txc, 0.0f);
+    float4 pixel1 = textureChecker.SampleLevel(dynamicSampler, psInput.txc, 0.0f);
+    float4 pixel2 = textureChecker2.SampleLevel(dynamicSampler2, psInput.txc, 0.0f);
+    float4 mixPixel;
+    if (pixel1.a < 0.8f)
+        mixPixel = pixel2;      
+    else
+        mixPixel = pixel1;
     //float4 pixel = float4(1.0f);
-    return float4(psInput.col.xyzw * pixel2);
+    return float4(psInput.col.xyzw * mixPixel);
 }

@@ -5,6 +5,7 @@
 #include "UniformsLayout.hpp"
 #include "Image.hpp"
 #include "TextureLayout.hpp"
+#include "SamplerLayout.hpp"
 
 SampleRenderV2::Application* SampleRenderV2::Application::s_AppSingleton = nullptr;
 bool SampleRenderV2::Application::s_SingletonEnabled = false;
@@ -70,7 +71,7 @@ SampleRenderV2::Application::Application()
 	std::shared_ptr<Image> img;
 	img.reset(Image::CreateImage("./assets/textures/yor.png"));
 	std::shared_ptr<Image> img2;
-	img2.reset(Image::CreateImage("./assets/textures/david.jpg"));
+	img2.reset(Image::CreateImage("./assets/textures/sample.png"));
 
 	UniformLayout uniformsLayout(
 		{
@@ -92,9 +93,15 @@ SampleRenderV2::Application::Application()
 			{img2, 4, 3, 0, 0, TextureTensor::TENSOR_2, 1, 1},
 		}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
 
-	
+	SamplerLayout samplerLayout(
+		{
+			//SamplerFilter filter, AnisotropicFactor anisotropicFactor, AddressMode addressMode, ComparisonPassMode comparisonPassMode, uint32_t bindingSlot, uint32_t shaderRegister, uint32_t samplerIndex
+			{SamplerFilter::LINEAR, AnisotropicFactor::FACTOR_4, AddressMode::BORDER, ComparisonPassMode::ALWAYS, 5, 0, 4, 0},
+			{SamplerFilter::NEAREST, AnisotropicFactor::FACTOR_4, AddressMode::BORDER, ComparisonPassMode::ALWAYS, 6, 0, 4, 1},
+		}
+	);
 
-	m_Shader.reset(Shader::Instantiate(&m_Context, "./assets/shaders/HelloTriangle", layout, smallBufferLayout, uniformsLayout, textureLayout));
+	m_Shader.reset(Shader::Instantiate(&m_Context, "./assets/shaders/HelloTriangle", layout, smallBufferLayout, uniformsLayout, textureLayout, samplerLayout));
 	m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 1, 1);
 	m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 2, 1);
 	//m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 1, 1);
