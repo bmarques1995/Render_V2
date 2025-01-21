@@ -55,7 +55,8 @@ SampleRenderV2::Application::Application()
 	InputBufferLayout layout(
 		{
 			{ShaderDataType::Float3, "POSITION", false},
-			{ShaderDataType::Float4, "COLOR", false}
+			{ShaderDataType::Float4, "COLOR", false},
+			{ShaderDataType::Float2, "TEXCOORD", false},
 		});
 
 	SmallBufferLayout smallBufferLayout(
