@@ -67,6 +67,7 @@ namespace SampleRenderV2
 		std::unordered_map<uint32_t, ComPointer<ID3D12DescriptorHeap>> m_RootDescriptors;
 		std::unordered_map<uint32_t, ComPointer<ID3D12DescriptorHeap>> m_TabledDescriptors;
 		std::unordered_map<uint32_t, ComPointer<ID3D12DescriptorHeap>> m_SamplerDescriptors;
+		std::vector<ID3D12DescriptorHeap*> m_MergedHeaps;
 		//descriptor index, resource index
 		std::unordered_map<uint64_t, ComPointer<ID3D12Resource2>> m_CBVResources;
 		std::unordered_map<uint64_t, ComPointer<ID3D12Resource2>> m_SRVResources;

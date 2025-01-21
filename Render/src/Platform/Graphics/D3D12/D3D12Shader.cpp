@@ -119,6 +119,11 @@ SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* co
 
 	PreallocateTextureDescriptors(textureCount, rootSigIndex);
 
+	for(auto& desc: m_TabledDescriptors)
+		m_MergedHeaps.push_back(desc.second.Get());
+	for (auto& desc : m_SamplerDescriptors)
+		m_MergedHeaps.push_back(desc.second.Get());
+
 	/*auto device = (*m_Context)->GetDevicePtr();
 	HRESULT hr;
 
@@ -192,10 +197,15 @@ void SampleRenderV2::D3D12Shader::BindDescriptors()
 		cmdList->SetGraphicsRootConstantBufferView(rootDescriptor.first, m_CBVResources[(((uint64_t)rootDescriptor.first << 32) + 1)]->GetGPUVirtualAddress());
 	}
 	
+	cmdList->SetDescriptorHeaps(m_MergedHeaps.size(), m_MergedHeaps.data());
+
 	for (auto& tabledDescriptor : m_TabledDescriptors)
 	{
-		cmdList->SetDescriptorHeaps(1, tabledDescriptor.second.GetAddressOf());
 		cmdList->SetGraphicsRootDescriptorTable(tabledDescriptor.first, tabledDescriptor.second->GetGPUDescriptorHandleForHeapStart());
+	}
+	for (auto& samplerDescriptor : m_SamplerDescriptors)
+	{
+		cmdList->SetGraphicsRootDescriptorTable(samplerDescriptor.first, samplerDescriptor.second->GetGPUDescriptorHandleForHeapStart());
 	}
 }
 
