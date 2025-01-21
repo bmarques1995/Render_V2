@@ -2,7 +2,9 @@
 #include "Console.hpp"
 #include <imgui/imgui.h>
 #include "CompilerExceptions.hpp"
-#include <UniformsLayout.hpp>
+#include "UniformsLayout.hpp"
+#include "Image.hpp"
+#include "TextureLayout.hpp"
 
 SampleRenderV2::Application* SampleRenderV2::Application::s_AppSingleton = nullptr;
 bool SampleRenderV2::Application::s_SingletonEnabled = false;
@@ -65,9 +67,14 @@ SampleRenderV2::Application::Application()
 			{ 0, 64, 0, m_Context->GetSmallBufferAttachment() }
 		}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
 
+	std::shared_ptr<Image> img;
+	img.reset(Image::CreateImage("./assets/textures/yor.png"));
+	std::shared_ptr<Image> img2;
+	img2.reset(Image::CreateImage("./assets/textures/david.jpg"));
+
 	UniformLayout uniformsLayout(
 		{
-			//BufferType bufferType, size_t size, uint32_t bindingSlot, uint32_t spaceSet, uint32_t shaderRegister, AccessLevel accessLevel, uint32_t bufferAttachment
+			//BufferType bufferType, size_t size, uint32_t bindingSlot, uint32_t spaceSet, uint32_t shaderRegister, AccessLevel accessLevel, uint32_t numberOfBuffers, uint32_t bufferAttachment
 			{ BufferType::UNIFORM_CONSTANT_BUFFER, 256, 1, 0, 1, AccessLevel::ROOT_BUFFER, 1, m_Context->GetUniformAttachment() }, //
 			{ BufferType::UNIFORM_CONSTANT_BUFFER, 256, 2, 0, 2, AccessLevel::ROOT_BUFFER, 1, m_Context->GetUniformAttachment() } //
 		}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
@@ -78,7 +85,16 @@ SampleRenderV2::Application::Application()
 	//		{ BufferType::UNIFORM_CONSTANT_BUFFER, 256, 1, 0, 1, AccessLevel::DESCRIPTOR_BUFFER, 2, m_Context->GetUniformAttachment() }
 	//	}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
 
-	m_Shader.reset(Shader::Instantiate(&m_Context, "./assets/shaders/HelloTriangle", layout, smallBufferLayout, uniformsLayout));
+	TextureLayout textureLayout(
+		//std::shared_ptr<Image> img, uint32_t bindingSlot, uint32_t shaderRegister, uint32_t spaceSet, uint32_t samplerRegister, TextureTensor tensor, uint32_t textureIndex, size_t depth
+		{
+			{img, 3, 3, 0, 0, TextureTensor::TENSOR_2, 0, 1},
+			{img2, 4, 3, 0, 0, TextureTensor::TENSOR_2, 1, 1},
+		}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
+
+	
+
+	m_Shader.reset(Shader::Instantiate(&m_Context, "./assets/shaders/HelloTriangle", layout, smallBufferLayout, uniformsLayout, textureLayout));
 	m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 1, 1);
 	m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 2, 1);
 	//m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 1, 1);
@@ -161,4 +177,9 @@ void SampleRenderV2::Application::EnableSingleton(Application* ptr)
 SampleRenderV2::Application* SampleRenderV2::Application::GetInstance()
 {
 	return s_AppSingleton;
+}
+
+std::shared_ptr<SampleRenderV2::CopyPipeline>* SampleRenderV2::Application::GetCopyPipeline()
+{
+	return &m_CopyPipeline;
 }

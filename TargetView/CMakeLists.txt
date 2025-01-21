@@ -11,6 +11,27 @@ endif()
 file(GLOB_RECURSE TARGET_HDRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "include/*.hpp")
 file(GLOB_RECURSE TARGET_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/*.cpp")
 
+# Set URLs for images
+set(IMAGES
+    "https://media.githubusercontent.com/media/bmarques1995/Render/master/TargetView/assets/textures/sample.png"
+    "https://media.githubusercontent.com/media/bmarques1995/Render/master/TargetView/assets/textures/david.jpg"
+    "https://media.githubusercontent.com/media/bmarques1995/Render/master/TargetView/assets/textures/yor.png"
+)
+
+# Set the download directory (e.g., CMake's binary directory)
+set(DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets/textures")
+
+# Loop through each image URL and download it
+foreach(IMAGE_URL ${IMAGES})
+    # Extract the filename from the URL
+    get_filename_component(IMAGE_NAME ${IMAGE_URL} NAME)
+    set(OUTPUT_FILE "${DOWNLOAD_DIR}/${IMAGE_NAME}")
+
+    # Download the file
+    file(DOWNLOAD ${IMAGE_URL} ${OUTPUT_FILE} SHOW_PROGRESS)
+    message(STATUS "Downloaded ${IMAGE_NAME} to ${OUTPUT_FILE}")
+endforeach()
+
 add_executable(${TARGET_NAME} ${TARGET_HDRS} ${TARGET_SRCS})
 target_include_directories(${TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_link_libraries(${TARGET_NAME} PUBLIC Render)
@@ -19,6 +40,10 @@ if(WIN32)
 endif()
 
 set_cxx_project_standards(${TARGET_NAME} 20 FALSE)
+
+#https://github.com/bmarques1995/Render/blob/master/TargetView/assets/textures/sample.png
+#https://github.com/bmarques1995/Render/blob/master/TargetView/assets/textures/david.jpg
+#https://github.com/bmarques1995/Render/blob/master/TargetView/assets/textures/yor.png
 
 add_custom_target(copy_assets ALL
 			COMMAND ${CMAKE_COMMAND} -E copy_directory

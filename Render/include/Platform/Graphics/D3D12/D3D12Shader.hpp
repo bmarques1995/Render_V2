@@ -19,7 +19,7 @@ namespace SampleRenderV2
 	class SAMPLE_RENDER_DLL_COMMAND D3D12Shader : public Shader
 	{
 	public:
-		D3D12Shader(const std::shared_ptr<D3D12Context>* context, std::string json_controller_path, InputBufferLayout layout, SmallBufferLayout smallBufferLayout, UniformLayout uniformLayout);
+		D3D12Shader(const std::shared_ptr<D3D12Context>* context, std::string json_controller_path, InputBufferLayout layout, SmallBufferLayout smallBufferLayout, UniformLayout uniformLayout, TextureLayout textureLayout);
 		~D3D12Shader();
 
 		void Stage() override;
@@ -32,6 +32,10 @@ namespace SampleRenderV2
 
 		void UpdateCBuffer(const void* data, size_t size, uint32_t shaderRegister, uint32_t tableIndex) override;
 	private:
+
+		void PreallocateTextureDescriptors(uint32_t numOfTextures, uint32_t rootSigIndex);
+		void CreateTexture(TextureElement textureElement);
+		void CopyTextureBuffer(TextureElement textureElement);
 
 		bool IsCBufferValid(size_t size);
 		void PreallocateRootCBuffer(const void* data, UniformElement uniformElement);
@@ -49,6 +53,8 @@ namespace SampleRenderV2
 		static DXGI_FORMAT GetNativeFormat(ShaderDataType type);
 		static D3D12_DESCRIPTOR_HEAP_TYPE GetNativeHeapType(BufferType type);
 		static D3D12_RESOURCE_DIMENSION GetNativeDimension(BufferType type);
+		static D3D12_RESOURCE_DIMENSION GetNativeTensor(TextureTensor tensor);
+
 		static const std::unordered_map<std::string, std::function<void(IDxcBlob**, D3D12_GRAPHICS_PIPELINE_STATE_DESC*)>> s_ShaderPusher;
 		static const std::list<std::string> s_GraphicsPipelineStages;
 
@@ -57,12 +63,14 @@ namespace SampleRenderV2
 		std::vector<const ID3D12DescriptorHeap*> m_BindableDescriptors;
 		//descriptor index, resource index
 		std::unordered_map<uint64_t, ComPointer<ID3D12Resource2>> m_CBVResources;
+		std::unordered_map<uint64_t, ComPointer<ID3D12Resource2>> m_SRVResources;
 
 
 		Json::Value m_PipelineInfo;
 
 		InputBufferLayout m_Layout;
 		SmallBufferLayout m_SmallBufferLayout;
+		TextureLayout m_TextureLayout;
 		UniformLayout m_UniformLayout;
 		const std::shared_ptr<D3D12Context>* m_Context;
 		std::string m_ShaderDir;

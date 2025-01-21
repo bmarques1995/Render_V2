@@ -11,6 +11,7 @@ RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT\
 RootConstants(num32BitConstants=16, b0), \
 CBV(b1),\
 CBV(b2),\
+DescriptorTable(SRV(t1, numDescriptors = 2)), \
 StaticSampler( s2,\
                 filter = FILTER_ANISOTROPIC,\
                 addressU = TEXTURE_ADDRESS_WRAP,\
@@ -71,6 +72,11 @@ cbuffer u_SSBO : register(b2)
     SSBO m_SSBO;
 };
 
+[[vk::binding(3, 0)]] Texture2D textureChecker : register(t1);
+[[vk::binding(4, 0)]] Texture2D textureChecker2 : register(t2);
+
+[[vk::binding(5, 0)]] SamplerState staticSampler : register(s2);
+
 struct VSInput
 {
     [[vk::location(0)]]float3 pos : POSITION;
@@ -98,5 +104,8 @@ PSInput vs_main(VSInput vsInput)
 
 float4 ps_main(PSInput psInput) : SV_TARGET0
 {
-    return float4(psInput.txc, 0.0f, 1.0f);
+    float4 pixel1 = textureChecker.SampleLevel(staticSampler, psInput.txc, 0.0f);
+    float4 pixel2 = textureChecker2.SampleLevel(staticSampler, psInput.txc, 0.0f);
+    //float4 pixel = float4(1.0f);
+    return float4(psInput.col.xyzw * pixel2);
 }

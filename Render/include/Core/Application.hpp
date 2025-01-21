@@ -40,6 +40,11 @@ namespace SampleRenderV2
 			return m_Window;
 		}
 
+		std::shared_ptr<CopyPipeline>* GetCopyPipeline();
+		/*{
+			return &m_CopyPipeline;
+		}*/
+
 	protected:
 
 		Eigen::Vector<float, 9> vBuffer[4] =

@@ -3,6 +3,7 @@
 #include "RenderDLLMacro.hpp"
 #include "InputBufferLayout.hpp"
 #include "UniformsLayout.hpp"
+#include "TextureLayout.hpp"
 #include "GraphicsContext.hpp"
 
 namespace SampleRenderV2
@@ -27,6 +28,6 @@ namespace SampleRenderV2
 
 		virtual void UpdateCBuffer(const void* data, size_t size, uint32_t shaderRegister, uint32_t tableIndex) = 0;
 
-		static Shader* Instantiate(const std::shared_ptr<GraphicsContext>* context, std::string json_basepath, InputBufferLayout layout, SmallBufferLayout smallBufferLayout, UniformLayout uniformLayout);
+		static Shader* Instantiate(const std::shared_ptr<GraphicsContext>* context, std::string json_basepath, InputBufferLayout layout, SmallBufferLayout smallBufferLayout, UniformLayout uniformLayout, TextureLayout textureLayout);
 	};
 }
