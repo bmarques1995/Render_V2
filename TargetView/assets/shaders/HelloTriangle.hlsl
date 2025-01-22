@@ -2,6 +2,7 @@
 
 //CBV(b1),\
 //CBV(b2),\
+//DescriptorTable(CBV(b1, numDescriptors = 2)), \
 
 #define rs_controller \
 RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT\

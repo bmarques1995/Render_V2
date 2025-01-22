@@ -98,15 +98,12 @@ SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* co
 	size_t i = 0;
 	for (auto& uniform : uniforms)
 	{
-		std::wstringstream wss;
-		wss << "CBV " << i;
 		unsigned char* data = new unsigned char[uniform.second.GetSize()];
 		if (uniform.second.GetAccessLevel() == AccessLevel::ROOT_BUFFER)
 			PreallocateRootCBuffer(data, uniform.second);
 		else
-			PreallocateTabledCBuffer(data, uniform.second, wss.str());
+			PreallocateTabledCBuffer(data, uniform.second);
 		delete[] data;
-		wss.str(L"");
 		i++;
 	}
 
@@ -505,7 +502,7 @@ void SampleRenderV2::D3D12Shader::PreallocateRootCBuffer(const void* data, Unifo
 	MapCBuffer(data, uniformElement.GetSize(), uniformElement.GetShaderRegister());
 }
 
-void SampleRenderV2::D3D12Shader::PreallocateTabledCBuffer(const void* data, UniformElement uniformElement, std::wstring debugName)
+void SampleRenderV2::D3D12Shader::PreallocateTabledCBuffer(const void* data, UniformElement uniformElement)
 {
 	if (!IsCBufferValid(uniformElement.GetSize()))
 		throw AttachmentMismatchException(uniformElement.GetSize(), (*m_Context)->GetSmallBufferAttachment());
@@ -520,12 +517,7 @@ void SampleRenderV2::D3D12Shader::PreallocateTabledCBuffer(const void* data, Uni
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
 	hr = device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(m_TabledDescriptors[uniformElement.GetShaderRegister()].GetAddressOf()));
-	if (FAILED(hr))
-	{
-		throw std::runtime_error("Failed to create descriptor heap");
-	}
-
-	m_TabledDescriptors[uniformElement.GetShaderRegister()]->SetName(debugName.c_str());
+	assert(hr == S_OK);
 
 	// 5. Create CBVs and place them in the descriptor heap
 	D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle(m_TabledDescriptors[uniformElement.GetShaderRegister()]->GetCPUDescriptorHandleForHeapStart());
