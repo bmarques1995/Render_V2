@@ -15,10 +15,17 @@ namespace SampleRenderV2
 		VkDeviceMemory Memory;
 	};
 
+	struct IMGB
+	{
+		VkImage Resource;
+		VkDeviceMemory Memory;
+		VkImageView View;
+	};
+
 	class SAMPLE_RENDER_DLL_COMMAND VKShader : public Shader
 	{
 	public:
-		VKShader(const std::shared_ptr<VKContext>* context, std::string json_controller_path, InputBufferLayout layout, SmallBufferLayout smallBufferLayout, UniformLayout uniformLayout);
+		VKShader(const std::shared_ptr<VKContext>* context, std::string json_controller_path, InputBufferLayout layout, SmallBufferLayout smallBufferLayout, UniformLayout uniformLayout, TextureLayout textureLayout, SamplerLayout samplerLayout);
 		~VKShader();
 
 		void Stage() override;
@@ -43,6 +50,12 @@ namespace SampleRenderV2
 		void MapUniform(const void* data, size_t size, uint32_t shaderRegister, uint32_t offset);
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
+		void CreateSampler(SamplerElement samplerElement);
+
+		void CreateTexture(TextureElement textureElement);
+		void AllocateTexture(TextureElement textureElement);
+		void CopyTextureBuffer(TextureElement textureElement);
+
 		void PushShader(std::string_view stage, VkPipelineShaderStageCreateInfo* graphicsDesc);
 		void InitJsonAndPaths(std::string json_controller_path);
 		void SetRasterizer(VkPipelineRasterizationStateCreateInfo* rasterizer);
@@ -52,7 +65,12 @@ namespace SampleRenderV2
 
 		static VkFormat GetNativeFormat(ShaderDataType type);
 		static VkBufferUsageFlagBits GetNativeBufferUsage(BufferType type);
+		static VkImageType GetNativeTensor(TextureTensor tensor);
+		static VkImageViewType GetNativeTensorView(TextureTensor tensor);
 		static VkDescriptorType GetNativeDescriptorType(BufferType type);
+		static VkFilter GetNativeFilter(SamplerFilter filter);
+		static VkSamplerAddressMode GetNativeAddressMode(AddressMode addressMode);
+
 		static const std::list<std::string> s_GraphicsPipelineStages;
 
 		static const std::unordered_map<std::string, VkShaderStageFlagBits> s_StageCaster;
@@ -65,6 +83,8 @@ namespace SampleRenderV2
 		std::vector<VkDescriptorSet> m_BindableDescriptorSets;
 
 		std::unordered_map<uint32_t, RM> m_Uniforms;
+		std::unordered_map<uint32_t, VkSampler> m_Samplers;
+		std::unordered_map<uint32_t, IMGB> m_Textures;
 
 		Json::Value m_PipelineInfo;
 
@@ -73,6 +93,8 @@ namespace SampleRenderV2
 		InputBufferLayout m_Layout;
 		SmallBufferLayout m_SmallBufferLayout;
 		UniformLayout m_UniformLayout;
+		TextureLayout m_TextureLayout;
+		SamplerLayout m_SamplerLayout;
 		const std::shared_ptr<VKContext>* m_Context;
 		std::string m_ShaderDir;
 		VkPipeline m_GraphicsPipeline;

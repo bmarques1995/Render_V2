@@ -1,5 +1,7 @@
 #include "VKShader.hpp"
+#include "VKCopyPipeline.hpp"
 #include "FileHandler.hpp"
+#include "Application.hpp"
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -26,8 +28,8 @@ const std::unordered_map<uint32_t, VkShaderStageFlagBits> SampleRenderV2::VKShad
     {AllowedStages::MESH_STAGE, VK_SHADER_STAGE_MESH_BIT_EXT},
     {AllowedStages::AMPLIFICATION_STAGE, VK_SHADER_STAGE_TASK_BIT_EXT},
 };
-SampleRenderV2::VKShader::VKShader(const std::shared_ptr<VKContext>* context, std::string json_controller_path, InputBufferLayout layout, SmallBufferLayout smallBufferLayout, UniformLayout uniformLayout) :
-    m_Context(context), m_Layout(layout), m_SmallBufferLayout(smallBufferLayout), m_UniformLayout(uniformLayout)
+SampleRenderV2::VKShader::VKShader(const std::shared_ptr<VKContext>* context, std::string json_controller_path, InputBufferLayout layout, SmallBufferLayout smallBufferLayout, UniformLayout uniformLayout, TextureLayout textureLayout, SamplerLayout samplerLayout) :
+    m_Context(context), m_Layout(layout), m_SmallBufferLayout(smallBufferLayout), m_UniformLayout(uniformLayout), m_TextureLayout(textureLayout), m_SamplerLayout(samplerLayout)
 {
     VkResult vkr;
     auto device = (*m_Context)->GetDevice();
@@ -97,6 +99,20 @@ SampleRenderV2::VKShader::VKShader(const std::shared_ptr<VKContext>* context, st
                 PreallocateUniform(data, element.second, i);
             }
             delete[] data;
+        }
+
+        auto samplers = m_SamplerLayout.GetElements();
+
+        for (const auto& element : samplers)
+        {
+            CreateSampler(element.second);
+        }
+
+        auto textures = m_TextureLayout.GetElements();
+
+        for (const auto& element : textures)
+        {
+            CreateTexture(element.second);
         }
 
         CreateDescriptorSets();
@@ -178,11 +194,25 @@ SampleRenderV2::VKShader::~VKShader()
 {
     auto device = (*m_Context)->GetDevice();
     vkDeviceWaitIdle(device);
+    
+    for (auto& i : m_Textures)
+    {
+        vkDestroyImageView(device, i.second.View, nullptr);
+        vkFreeMemory(device, i.second.Memory, nullptr);
+        vkDestroyImage(device, i.second.Resource, nullptr);
+    }
+
+    for (auto& i : m_Samplers)
+    {
+        vkDestroySampler(device, i.second, nullptr);
+    }
+    
     for (auto& i : m_Uniforms)
     {
         vkDestroyBuffer(device, i.second.Resource, nullptr);
         vkFreeMemory(device, i.second.Memory, nullptr);
     }
+    
     vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(device, m_RootSignature, nullptr);
     vkDestroyPipeline(device, m_GraphicsPipeline, nullptr);
@@ -252,6 +282,8 @@ void SampleRenderV2::VKShader::PreallocatesDescSets()
 
     VkResult vkr;
     auto uniforms = m_UniformLayout.GetElements();
+    auto textures = m_TextureLayout.GetElements();
+    auto samplers = m_SamplerLayout.GetElements();
 
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -264,6 +296,24 @@ void SampleRenderV2::VKShader::PreallocatesDescSets()
         if (m_DescriptorSets.find(uniformElement.second.GetSpaceSet()) == m_DescriptorSets.end())
         {
             vkr = vkAllocateDescriptorSets(device, &allocInfo, &m_DescriptorSets[uniformElement.second.GetSpaceSet()]);
+            assert(vkr == VK_SUCCESS);
+        }
+    }
+
+    for (auto& textureElement : textures)
+    {
+        if (m_DescriptorSets.find(textureElement.second.GetSpaceSet()) == m_DescriptorSets.end())
+        {
+            vkr = vkAllocateDescriptorSets(device, &allocInfo, &m_DescriptorSets[textureElement.second.GetSpaceSet()]);
+            assert(vkr == VK_SUCCESS);
+        }
+    }
+
+    for (auto& samplerElement : samplers)
+    {
+        if (m_DescriptorSets.find(samplerElement.second.GetSpaceSet()) == m_DescriptorSets.end())
+        {
+            vkr = vkAllocateDescriptorSets(device, &allocInfo, &m_DescriptorSets[samplerElement.second.GetSpaceSet()]);
             assert(vkr == VK_SUCCESS);
         }
     }
@@ -304,6 +354,42 @@ void SampleRenderV2::VKShader::CreateDescriptorSetLayout()
         
     }
 
+    auto textureElements = m_TextureLayout.GetElements();
+    for (auto& i : textureElements)
+    {
+        VkDescriptorSetLayoutBinding binding{};
+        binding.binding = i.second.GetBindingSlot();
+        binding.descriptorCount = 1;
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        binding.pImmutableSamplers = nullptr;
+        VkShaderStageFlags stageFlag = 0x0;
+
+        for (auto& i : s_EnumStageCaster)
+            if ((i.first & m_UniformLayout.GetStages()) != 0)
+                stageFlag |= i.second;
+
+        binding.stageFlags = stageFlag;
+        bindings.push_back(binding);
+    }
+
+    auto samplerElements = m_SamplerLayout.GetElements();
+    for (auto& i : samplerElements)
+    {
+        VkDescriptorSetLayoutBinding binding{};
+        binding.binding = i.second.GetBindingSlot();
+        binding.descriptorCount = 1;
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+        binding.pImmutableSamplers = nullptr;
+        VkShaderStageFlags stageFlag = 0x0;
+
+        for (auto& i : s_EnumStageCaster)
+            if ((i.first & m_UniformLayout.GetStages()) != 0)
+                stageFlag |= i.second;
+
+        binding.stageFlags = stageFlag;
+        bindings.push_back(binding);
+    }
+
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -322,8 +408,29 @@ void SampleRenderV2::VKShader::CreateDescriptorPool()
     auto uniformElements = m_UniformLayout.GetElements();
     for (auto& i : uniformElements)
     {
+        for (size_t j = 0; j < i.second.GetNumberOfBuffers(); j++)
+        {
+            VkDescriptorPoolSize poolSizer;
+            poolSizer.type = GetNativeDescriptorType(i.second.GetBufferType());
+            poolSizer.descriptorCount = 1;
+            poolSize.push_back(poolSizer);
+        }
+    }
+
+    auto textureElements = m_TextureLayout.GetElements();
+    for (auto& i : textureElements)
+    {
         VkDescriptorPoolSize poolSizer;
-        poolSizer.type = GetNativeDescriptorType(i.second.GetBufferType());
+        poolSizer.type = GetNativeDescriptorType(BufferType::TEXTURE_BUFFER);
+        poolSizer.descriptorCount = 1;
+        poolSize.push_back(poolSizer);
+    }
+
+    auto samplerElements = m_SamplerLayout.GetElements();
+    for (auto& i : samplerElements)
+    {
+        VkDescriptorPoolSize poolSizer;
+        poolSizer.type = GetNativeDescriptorType(BufferType::SAMPLER_BUFFER);
         poolSizer.descriptorCount = 1;
         poolSize.push_back(poolSizer);
     }
@@ -345,9 +452,12 @@ void SampleRenderV2::VKShader::CreateDescriptorSets()
 
     std::vector<VkWriteDescriptorSet> descriptorWrites;
     std::vector<VkDescriptorImageInfo> imageInfos;
+    std::vector<VkDescriptorImageInfo> samplerInfos;
     std::vector<VkDescriptorBufferInfo> bufferInfos;
 
     auto uniforms = m_UniformLayout.GetElements();
+    auto textures = m_TextureLayout.GetElements();
+    auto samplers = m_SamplerLayout.GetElements();
 
     size_t i = 0;
 
@@ -366,6 +476,32 @@ void SampleRenderV2::VKShader::CreateDescriptorSets()
             bufferInfos.push_back(bufferInfo);
         }
     }
+    for (auto& textureElement : textures)
+    {
+
+        //assert(vkr == VK_SUCCESS);
+
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = m_Textures[textureElement.second.GetBindingSlot()].View;
+        imageInfo.sampler = nullptr;
+
+        imageInfos.push_back(imageInfo);
+    }
+
+    for (auto& samplerElement : samplers)
+    {
+
+        //assert(vkr == VK_SUCCESS);
+
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = nullptr;
+        imageInfo.sampler = m_Samplers[samplerElement.second.GetBindingSlot()];
+
+        samplerInfos.push_back(imageInfo);
+    }
+
     for (auto& uniformElement : uniforms)
     {
         for (size_t j = 0; j < uniformElement.second.GetNumberOfBuffers(); j++)
@@ -382,6 +518,40 @@ void SampleRenderV2::VKShader::CreateDescriptorSets()
             descriptorWrites.push_back(descriptorWrite);
             i++;
         }
+    }
+
+    i = 0;
+    for (auto& textureElement : textures)
+    {
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = m_DescriptorSets[textureElement.second.GetSpaceSet()];
+        descriptorWrite.dstBinding = textureElement.second.GetBindingSlot();
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = GetNativeDescriptorType(BufferType::TEXTURE_BUFFER);
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pImageInfo = &imageInfos[i];
+
+        descriptorWrites.push_back(descriptorWrite);
+
+        i++;
+    }
+
+    i = 0;
+    for (auto& samplerElement : samplers)
+    {
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = m_DescriptorSets[samplerElement.second.GetSpaceSet()];
+        descriptorWrite.dstBinding = samplerElement.second.GetBindingSlot();
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = GetNativeDescriptorType(BufferType::SAMPLER_BUFFER);
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pImageInfo = &samplerInfos[i];
+
+        descriptorWrites.push_back(descriptorWrite);
+
+        i++;
     }
 
     vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
@@ -453,6 +623,225 @@ uint32_t SampleRenderV2::VKShader::FindMemoryType(uint32_t typeFilter, VkMemoryP
     }
 
     return 0xffffffff;
+}
+
+void SampleRenderV2::VKShader::CreateSampler(SamplerElement samplerElement)
+{
+    VkResult vkr;
+    auto device = (*m_Context)->GetDevice();
+    auto adapter = (*m_Context)->GetAdapter();
+
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(adapter, &properties);
+
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = GetNativeFilter(samplerElement.GetFilter());
+    samplerInfo.minFilter = GetNativeFilter(samplerElement.GetFilter());
+    samplerInfo.addressModeU = GetNativeAddressMode(samplerElement.GetAddressMode());
+    samplerInfo.addressModeV = GetNativeAddressMode(samplerElement.GetAddressMode());
+    samplerInfo.addressModeW = GetNativeAddressMode(samplerElement.GetAddressMode());
+    samplerInfo.anisotropyEnable = samplerElement.GetFilter() == SamplerFilter::ANISOTROPIC ? VK_TRUE : VK_FALSE;
+    samplerInfo.maxAnisotropy = std::min<float>(properties.limits.maxSamplerAnisotropy, (1 << (uint32_t)samplerElement.GetAnisotropicFactor()) * 1.0f);
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_TRUE;
+    samplerInfo.compareOp = (VkCompareOp)((uint32_t)samplerElement.GetComparisonPassMode());
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+    vkr = vkCreateSampler(device, &samplerInfo, nullptr, &m_Samplers[samplerElement.GetBindingSlot()]);
+    assert(vkr == VK_SUCCESS);
+}
+
+void SampleRenderV2::VKShader::CreateTexture(TextureElement textureElement)
+{
+    AllocateTexture(textureElement);
+    CopyTextureBuffer(textureElement);
+}
+
+void SampleRenderV2::VKShader::AllocateTexture(TextureElement textureElement)
+{
+    VkResult vkr;
+    auto device = (*m_Context)->GetDevice();
+    VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    uint32_t textureLocation = textureElement.GetBindingSlot();
+
+    VkImageCreateInfo imageInfo{};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = GetNativeTensor(textureElement.GetTensor());
+    //params
+    imageInfo.extent.width = textureElement.GetWidth();
+    imageInfo.extent.height = textureElement.GetHeight();
+    imageInfo.extent.depth = textureElement.GetDepth();
+    imageInfo.mipLevels = textureElement.GetMipsLevel();
+
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    vkr = vkCreateImage(device, &imageInfo, nullptr, &m_Textures[textureLocation].Resource);
+    assert(vkr == VK_SUCCESS);
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(device, m_Textures[textureLocation].Resource, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+    vkr = vkAllocateMemory(device, &allocInfo, nullptr, &m_Textures[textureLocation].Memory);
+    assert(vkr == VK_SUCCESS);
+
+    vkr = vkBindImageMemory(device, m_Textures[textureLocation].Resource, m_Textures[textureLocation].Memory, 0);
+    assert(vkr == VK_SUCCESS);
+
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = m_Textures[textureLocation].Resource;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    vkr = vkCreateImageView(device, &viewInfo, nullptr, &m_Textures[textureLocation].View);
+    assert(vkr == VK_SUCCESS);
+}
+
+void SampleRenderV2::VKShader::CopyTextureBuffer(TextureElement textureElement)
+{
+    VkResult vkr;
+    auto device = (*m_Context)->GetDevice();
+    uint32_t textureLocation = textureElement.GetBindingSlot();
+    std::shared_ptr<VKCopyPipeline>* copyPipeline = (std::shared_ptr<VKCopyPipeline>*)
+        (Application::GetInstance()->GetCopyPipeline());
+
+    auto copyCommandBuffer = (*copyPipeline)->GetCommandBuffer();
+    auto copyCommandPool = (*copyPipeline)->GetCommandPool();
+
+    VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    size_t imageSize = (textureElement.GetWidth() * textureElement.GetHeight() * textureElement.GetDepth() * textureElement.GetChannels());
+
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = imageSize;
+    bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    vkr = vkCreateBuffer(device, &bufferInfo, nullptr, &stagingBuffer);
+    assert(vkr == VK_SUCCESS);
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(device, stagingBuffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+    vkr = vkAllocateMemory(device, &allocInfo, nullptr, &stagingBufferMemory);
+    assert(vkr == VK_SUCCESS);
+
+    vkBindBufferMemory(device, stagingBuffer, stagingBufferMemory, 0);
+
+    void* GPUData = nullptr;
+    vkr = vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &GPUData);
+    assert(vkr == VK_SUCCESS);
+    memcpy(GPUData, textureElement.GetTextureBuffer(), imageSize);
+    vkUnmapMemory(device, stagingBufferMemory);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(copyCommandBuffer, &beginInfo);
+
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = m_Textures[textureLocation].Resource;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+    vkCmdPipelineBarrier(
+        copyCommandBuffer,
+        sourceStage, destinationStage,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier
+    );
+
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = { 0, 0, 0 };
+    region.imageExtent = {
+        textureElement.GetWidth(),
+        textureElement.GetHeight(),
+        textureElement.GetDepth()
+    };
+
+    vkCmdCopyBufferToImage(copyCommandBuffer, stagingBuffer, m_Textures[textureLocation].Resource, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    barrier = {};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = m_Textures[textureLocation].Resource;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+    vkCmdPipelineBarrier(
+        copyCommandBuffer,
+        sourceStage, destinationStage,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier
+    );
+
+    vkEndCommandBuffer(copyCommandBuffer);
+
+    (*copyPipeline)->Wait();
+
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
 void SampleRenderV2::VKShader::PushShader(std::string_view stage, VkPipelineShaderStageCreateInfo* graphicsDesc)
@@ -593,6 +982,36 @@ VkBufferUsageFlagBits SampleRenderV2::VKShader::GetNativeBufferUsage(BufferType 
     }
 }
 
+VkImageType SampleRenderV2::VKShader::GetNativeTensor(TextureTensor tensor)
+{
+    switch (tensor)
+    {
+    case TextureTensor::TENSOR_1:
+        return VK_IMAGE_TYPE_1D;
+    case TextureTensor::TENSOR_2:
+        return VK_IMAGE_TYPE_2D;
+    case TextureTensor::TENSOR_3:
+        return VK_IMAGE_TYPE_3D;
+    default:
+        return VK_IMAGE_TYPE_MAX_ENUM;
+    }
+}
+
+VkImageViewType SampleRenderV2::VKShader::GetNativeTensorView(TextureTensor tensor)
+{
+    switch (tensor)
+    {
+    case TextureTensor::TENSOR_1:
+        return VK_IMAGE_VIEW_TYPE_1D;
+    case TextureTensor::TENSOR_2:
+        return VK_IMAGE_VIEW_TYPE_2D;
+    case TextureTensor::TENSOR_3:
+        return VK_IMAGE_VIEW_TYPE_3D;
+    default:
+        return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+    }
+}
+
 VkDescriptorType SampleRenderV2::VKShader::GetNativeDescriptorType(BufferType type)
 {
     switch (type)
@@ -606,5 +1025,38 @@ VkDescriptorType SampleRenderV2::VKShader::GetNativeDescriptorType(BufferType ty
     default:
     case BufferType::INVALID_BUFFER_TYPE:
         return VK_DESCRIPTOR_TYPE_MAX_ENUM;
+    }
+}
+
+VkFilter SampleRenderV2::VKShader::GetNativeFilter(SamplerFilter filter)
+{
+    switch (filter)
+    {
+    case SamplerFilter::ANISOTROPIC:
+    case SamplerFilter::LINEAR:
+        return VK_FILTER_LINEAR;
+    case SamplerFilter::NEAREST:
+        return VK_FILTER_NEAREST;
+    default:
+        return VK_FILTER_MAX_ENUM;
+    }
+}
+
+VkSamplerAddressMode SampleRenderV2::VKShader::GetNativeAddressMode(AddressMode addressMode)
+{
+    switch (addressMode)
+    {
+    case AddressMode::REPEAT:
+        return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    case AddressMode::MIRROR:
+        return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+    case AddressMode::CLAMP:
+        return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    case AddressMode::BORDER:
+        return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    case AddressMode::MIRROR_ONCE:
+        return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+    default:
+        return VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
     }
 }
