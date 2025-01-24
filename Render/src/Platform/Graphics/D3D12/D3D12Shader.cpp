@@ -272,6 +272,7 @@ void SampleRenderV2::D3D12Shader::CreateTexture(TextureElement textureElement)
 
 	D3D12_RESOURCE_DESC1 textureBufferDesc = {};
 	textureBufferDesc.Dimension = GetNativeTensor(textureElement.GetTensor());
+	textureBufferDesc.Alignment = 0;
 	textureBufferDesc.Width = textureElement.GetWidth(); //mandatory
 	textureBufferDesc.Height = textureElement.GetHeight(); // mandatory 2 and 3
 	textureBufferDesc.DepthOrArraySize = textureElement.GetDepth(); // mandatory 3
