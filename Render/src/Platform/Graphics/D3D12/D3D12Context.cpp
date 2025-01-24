@@ -153,12 +153,12 @@ void SampleRenderV2::D3D12Context::Draw(uint32_t elements)
 	m_CommandLists[m_CurrentBufferIndex]->DrawIndexedInstanced(elements, 1, 0, 0, 0);
 }
 
-ID3D12Device10* SampleRenderV2::D3D12Context::GetDevicePtr() const
+ID3D12Device14* SampleRenderV2::D3D12Context::GetDevicePtr() const
 {
 	return m_Device.GetConst();
 }
 
-ID3D12GraphicsCommandList6* SampleRenderV2::D3D12Context::GetCurrentCommandList() const
+ID3D12GraphicsCommandList10* SampleRenderV2::D3D12Context::GetCurrentCommandList() const
 {
 	return m_CommandLists[m_CurrentBufferIndex].GetConst();
 }
@@ -330,7 +330,7 @@ void SampleRenderV2::D3D12Context::CreateCommandAllocator()
 
 void SampleRenderV2::D3D12Context::CreateCommandLists()
 {
-	m_CommandLists = new ComPointer<ID3D12GraphicsCommandList6>[m_FramesInFlight];
+	m_CommandLists = new ComPointer<ID3D12GraphicsCommandList10>[m_FramesInFlight];
 	for (size_t i = 0; i < m_FramesInFlight; i++)
 	{
 		m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocators[i].Get(), nullptr, IID_PPV_ARGS(m_CommandLists[i].GetAddressOf()));

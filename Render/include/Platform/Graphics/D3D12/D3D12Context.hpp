@@ -39,8 +39,8 @@ namespace SampleRenderV2
 
 		void Draw(uint32_t elements) override;
 
-		ID3D12Device10* GetDevicePtr() const;
-		ID3D12GraphicsCommandList6* GetCurrentCommandList() const;
+		ID3D12Device14* GetDevicePtr() const;
+		ID3D12GraphicsCommandList10* GetCurrentCommandList() const;
 		ID3D12CommandQueue* GetCommandQueue() const;
 
 		const std::string GetGPUName() override;
@@ -76,10 +76,10 @@ namespace SampleRenderV2
 		std::string m_GPUName;
 		uint64_t m_RTVHeapIncrement = 0;
 
-		ComPointer<IDXGIFactory6> m_DXGIFactory;
+		ComPointer<IDXGIFactory7> m_DXGIFactory;
 		ComPointer<IDXGIAdapter4> m_DXGIAdapter;
 
-		ComPointer<ID3D12Device10> m_Device;
+		ComPointer<ID3D12Device14> m_Device;
 		ComPointer<ID3D12CommandQueue> m_CommandQueue;
 		ComPointer<ID3D12Fence> m_CommandQueueFence;
 		uint64_t m_CommandQueueFenceValue = 0;
@@ -98,7 +98,7 @@ namespace SampleRenderV2
 		D3D12_CLEAR_VALUE m_ClearColor;
 
 		ComPointer<ID3D12CommandAllocator>* m_CommandAllocators;
-		ComPointer<ID3D12GraphicsCommandList6>* m_CommandLists;
+		ComPointer<ID3D12GraphicsCommandList10>* m_CommandLists;
 
 		UINT m_CurrentBufferIndex = -1;
 	};
