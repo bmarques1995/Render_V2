@@ -41,10 +41,6 @@ endif()
 
 set_cxx_project_standards(${TARGET_NAME} 20 FALSE)
 
-#https://github.com/bmarques1995/Render/blob/master/TargetView/assets/textures/sample.png
-#https://github.com/bmarques1995/Render/blob/master/TargetView/assets/textures/david.jpg
-#https://github.com/bmarques1995/Render/blob/master/TargetView/assets/textures/yor.png
-
 add_custom_target(copy_assets ALL
 			COMMAND ${CMAKE_COMMAND} -E copy_directory
 			"${CMAKE_CURRENT_SOURCE_DIR}/assets"
