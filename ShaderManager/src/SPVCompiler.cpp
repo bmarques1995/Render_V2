@@ -36,16 +36,16 @@ void SampleRenderV2::SPVCompiler::CompilePackedShader()
 {
 	static const std::regex pattern("^(.*[\\/])([^\\/]+)\\.hlsl$");
 	std::smatch matches;
-	static const std::vector<std::string> shaderStages = { "vs", "ps" };
 
 	Json::Value root;
 	Json::StreamWriterBuilder builder;
 	const std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
+	uint32_t presentStages = 0;
 
 	for (auto& shaderPath : m_ShaderFilepaths)
 	{
 		std::string basepath;
-		if (std::regex_match(shaderPath, matches, pattern))
+		if (std::regex_match(shaderPath.first, matches, pattern))
 		{
 			std::stringstream buffer;
 			buffer << matches[1].str();
@@ -53,17 +53,24 @@ void SampleRenderV2::SPVCompiler::CompilePackedShader()
 			basepath = buffer.str();
 			buffer.str("");
 			std::string shader;
-			ReadShaderSource(shaderPath, &shader);
-			for (auto& stage : shaderStages)
+			ReadShaderSource(shaderPath.first, &shader);
+			for (auto& stage : s_ShaderStages)
 			{
-				PushArgList(stage);
-				CompileStage(shader, stage, basepath);
-				buffer << matches[2].str() << "." << stage << m_BackendExtension;
-				root["BinShaders"][stage]["filename"] = buffer.str();
-				root["BinShaders"][stage]["entrypoint"] = m_CurrentEntrypointCopy;
-				buffer.str("");
+				if ((stage.first.compare("lib") == 0) && (shaderPath.second != PipelineType::RayTracing))
+					continue;
+				PushArgList(stage.first);
+				if (CompileStage(shader, stage.first, basepath))
+				{
+					presentStages |= (uint32_t)stage.second;
+					buffer << matches[2].str() << "." << stage.first << m_BackendExtension;
+					root["BinShaders"][stage.first]["filename"] = buffer.str();
+					root["BinShaders"][stage.first]["entrypoint"] = m_CurrentEntrypointCopy;
+					buffer.str("");
+				}
 				m_ArgList.clear();
 			}
+			if (!ValidatePipeline(presentStages, shaderPath.second))
+				continue;
 			root["HLSLFeatureLevel"] = m_HLSLFeatureLevel;
 			root["VulkanFeatureLevel"] = m_VulkanFeatureLevel;
 			writer->write(root, &buffer);

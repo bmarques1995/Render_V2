@@ -74,8 +74,8 @@ cbuffer u_SSBO : register(b2)
     SSBO m_SSBO;
 };
 
-[[vk::binding(3, 0)]] Texture2D textureChecker : register(t1);
-[[vk::binding(4, 0)]] Texture2D textureChecker2 : register(t2);
+[[vk::binding(3, 0)]] Texture2D<float4> textureChecker : register(t1);
+[[vk::binding(4, 0)]] Texture2D<float4> textureChecker2 : register(t2);
 
 [[vk::binding(5, 0)]] SamplerState dynamicSampler : register(s1);
 [[vk::binding(6, 0)]] SamplerState dynamicSampler2 : register(s2);

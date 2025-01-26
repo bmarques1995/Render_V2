@@ -19,16 +19,16 @@ void SampleRenderV2::CSOCompiler::CompilePackedShader()
 {
 	static const std::regex pattern("^(.*[\\/])([^\\/]+)\\.hlsl$");
 	std::smatch matches;
-	static const std::vector<std::string> shaderStages = { "vs", "ps" };
 
 	Json::Value root;
 	Json::StreamWriterBuilder builder;
 	const std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
+	uint32_t presentStages = 0;
 
 	for (auto& shaderPath : m_ShaderFilepaths)
 	{
 		std::string basepath;
-		if (std::regex_match(shaderPath, matches, pattern))
+		if (std::regex_match(shaderPath.first, matches, pattern))
 		{
 			std::stringstream buffer;
 			buffer << matches[1].str();
@@ -36,22 +36,29 @@ void SampleRenderV2::CSOCompiler::CompilePackedShader()
 			basepath = buffer.str();
 			buffer.str("");
 			std::string shader;
-			ReadShaderSource(shaderPath, &shader);
+			ReadShaderSource(shaderPath.first, &shader);
 			PushRootSignatureArgs("rs_controller");
 			CompileRootSignature(shader, basepath);
 			buffer << matches[2].str() << ".rs" << m_BackendExtension;
 			root["BinShaders"]["rs"]["filename"] = buffer.str();
 			buffer.str("");
 			m_ArgList.clear();
-			for (auto& stage : shaderStages)
+			for (auto& stage : s_ShaderStages)
 			{
-				PushArgList(stage);
-				CompileStage(shader, stage, basepath);
-				buffer << matches[2].str() << "." << stage << m_BackendExtension;
-				root["BinShaders"][stage]["filename"] = buffer.str();
-				buffer.str("");
+				if ((stage.first.compare("lib") == 0) && (shaderPath.second != PipelineType::RayTracing))
+					continue;
+				PushArgList(stage.first);
+				if (CompileStage(shader, stage.first, basepath))
+				{
+					presentStages |= (uint32_t)stage.second;
+					buffer << matches[2].str() << "." << stage.first << m_BackendExtension;
+					root["BinShaders"][stage.first]["filename"] = buffer.str();
+					buffer.str("");
+				}
 				m_ArgList.clear();
 			}
+			if (!ValidatePipeline(presentStages, shaderPath.second))
+				continue;
 			root["HLSLFeatureLevel"] = m_HLSLFeatureLevel;
 			writer->write(root, &buffer);
 			std::string jsonResult = buffer.str();
@@ -60,6 +67,8 @@ void SampleRenderV2::CSOCompiler::CompilePackedShader()
 			std::string jsonPath = buffer.str();
 			buffer.str("");
 			FileHandler::WriteTextFile(jsonPath, jsonResult);
+			presentStages = 0;
+			root.clear();
 		}
 	}
 }

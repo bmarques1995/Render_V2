@@ -281,7 +281,7 @@ void SampleRenderV2::D3D12Shader::CreateTexture(TextureElement textureElement)
 	textureBufferDesc.SampleDesc.Count = 1;
 	textureBufferDesc.SampleDesc.Quality = 0;
 	textureBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	textureBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	textureBufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 	D3D12_HEAP_PROPERTIES heapProps = {};
 	heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -397,7 +397,7 @@ void SampleRenderV2::D3D12Shader::CopyTextureBuffer(TextureElement textureElemen
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;
 	textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 	D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
 	srcLocation.pResource = textureBuffer.Get();
@@ -420,7 +420,7 @@ void SampleRenderV2::D3D12Shader::CopyTextureBuffer(TextureElement textureElemen
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Transition.pResource = m_SRVResources[textureLocation];
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	copyCommandList->ResourceBarrier(1, &barrier);
 

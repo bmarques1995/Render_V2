@@ -45,8 +45,9 @@ SampleRenderV2::Application::Application()
 	{
 		m_SPVCompiler.reset(new SPVCompiler("_main", "_6_8", "1.3"));
 		m_CSOCompiler.reset(new CSOCompiler("_main", "_6_8"));
-		m_SPVCompiler->PushShaderPath("./assets/shaders/HelloTriangle.hlsl");
-		m_CSOCompiler->PushShaderPath("./assets/shaders/HelloTriangle.hlsl");
+		m_SPVCompiler->PushShaderPath("./assets/shaders/HelloTriangle.hlsl", PipelineType::Graphics);
+		m_CSOCompiler->PushShaderPath("./assets/shaders/HelloTriangle.hlsl", PipelineType::Graphics);
+		m_CSOCompiler->PushShaderPath("./assets/shaders/MipsD3D12.hlsl", PipelineType::Compute);
 		m_SPVCompiler->CompilePackedShader();
 		m_CSOCompiler->CompilePackedShader();
 	}

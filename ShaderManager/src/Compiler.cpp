@@ -307,6 +307,19 @@ const std::list<std::string> SampleRenderV2::Compiler::s_BuiltinFunctions =
 	{"trunc"}
 };
 
+const std::unordered_map<std::string, SampleRenderV2::PipelineStage> SampleRenderV2::Compiler::s_ShaderStages =
+{
+	{"vs", PipelineStage::VERTEX_STAGE},
+	{"ps", PipelineStage::PIXEL_STAGE},
+	{"hs", PipelineStage::HULL_STAGE},
+	{"ds", PipelineStage::DOMAIN_STAGE},
+	{"gs", PipelineStage::GEOMETRY_STAGE},
+	{"cs", PipelineStage::COMPUTE_STAGE},
+	{"ms", PipelineStage::MESH_STAGE},
+	{"as", PipelineStage::AMPLIFICATION_STAGE},
+	{"lib", PipelineStage::RAYTRACING_STAGE}
+};
+
 SampleRenderV2::Compiler::Compiler(std::string_view backendExtension, std::string_view graphicsAPIExtension, std::string baseEntry, std::string hlslFeatureLevel) :
 	m_PackedShaders(true),
 	m_BackendExtension(backendExtension),
@@ -328,7 +341,7 @@ void SampleRenderV2::Compiler::SetBaseEntry(std::string baseEntry)
 	m_BaseEntry = baseEntry;
 }
 
-void SampleRenderV2::Compiler::PushShaderPath(std::string filepath)
+void SampleRenderV2::Compiler::PushShaderPath(std::string filepath, PipelineType pipelineType)
 {
 	std::regex pattern("^(.*[\\/])([^\\/]+)\\.hlsl$");
 
@@ -345,7 +358,10 @@ void SampleRenderV2::Compiler::PushShaderPath(std::string filepath)
 	{
 		throw InvalidFilepathException("Invalid filename");
 	}
-	m_ShaderFilepaths.push_back(filepath);
+	std::pair<std::string, PipelineType> shaderPath;
+	shaderPath.first = filepath;
+	shaderPath.second = pipelineType;
+	m_ShaderFilepaths.push_back(shaderPath);
 }
 
 void SampleRenderV2::Compiler::SetBuildMode(bool isDebug)
@@ -387,7 +403,7 @@ void SampleRenderV2::Compiler::ValidateHLSLFeatureLevel(std::string version)
 	}
 }
 
-void SampleRenderV2::Compiler::CompileStage(std::string source, std::string stage, std::string basepath)
+bool SampleRenderV2::Compiler::CompileStage(std::string source, std::string stage, std::string basepath)
 {
 	HRESULT hr;
 	std::stringstream buffer;
@@ -422,10 +438,11 @@ void SampleRenderV2::Compiler::CompileStage(std::string source, std::string stag
 	{
 		hr = result->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(errorBlob.GetAddressOf()), nullptr);
 		Console::CoreError("DXC Status: {}", (const char*)errorBlob->GetBufferPointer());
-		ValidatePipeline(stage);
 	}
 	else
-		FileHandler::WriteBinFile(outputPath,(std::byte*)blob->GetBufferPointer(), blob->GetBufferSize());
+		FileHandler::WriteBinFile(outputPath, (std::byte*)blob->GetBufferPointer(), blob->GetBufferSize());
+	
+	return !(blob->GetBufferSize() == 0);
 }
 
 void SampleRenderV2::Compiler::ReadShaderSource(std::string_view path, std::string* shaderSource)
@@ -529,13 +546,61 @@ void SampleRenderV2::Compiler::ValidateNameOverBuiltinFunctions(std::string name
 	}
 }
 
-void SampleRenderV2::Compiler::ValidatePipeline(std::string stage)
+bool SampleRenderV2::Compiler::ValidatePipeline(uint32_t stages, PipelineType pipelineType)
 {
-	std::stringstream buffer;
-	if ((stage.compare("ps") == 0) || (stage.compare("vs") == 0))
+	uint32_t validStageCombination;
+	uint32_t mandatoryStageCombination1;
+	uint32_t mandatoryStageCombination2;
+	uint32_t filteredStages;
+	uint32_t invalidStages;
+	uint32_t invalidStagesAusent;
+
+	switch (pipelineType)
 	{
-		buffer << stage << " is a mandatory stage";
-		std::string message = buffer.str();
-		throw InvalidPipelineException(message);
+	case SampleRenderV2::PipelineType::Graphics:
+	{
+		mandatoryStageCombination1 = (uint32_t)PipelineStage::VERTEX_STAGE | (uint32_t)PipelineStage::PIXEL_STAGE;
+		mandatoryStageCombination2 = (uint32_t)PipelineStage::VERTEX_STAGE | (uint32_t)PipelineStage::HULL_STAGE |
+			(uint32_t)PipelineStage::DOMAIN_STAGE | (uint32_t)PipelineStage::PIXEL_STAGE;
+		filteredStages = stages & mandatoryStageCombination2;
+		invalidStages = (uint32_t)PipelineStage::MESH_STAGE | (uint32_t)PipelineStage::AMPLIFICATION_STAGE |
+			(uint32_t)PipelineStage::RAYTRACING_STAGE | (uint32_t)PipelineStage::COMPUTE_STAGE;
+		invalidStagesAusent = (invalidStages ^ (stages & invalidStages));
+		return (((filteredStages == mandatoryStageCombination1) || (filteredStages == mandatoryStageCombination2)) && (invalidStagesAusent == invalidStages));
+	}
+	case SampleRenderV2::PipelineType::Compute:
+	{
+		validStageCombination = (uint32_t)PipelineStage::COMPUTE_STAGE;
+		filteredStages = stages & validStageCombination;
+		invalidStages = (uint32_t)PipelineStage::MESH_STAGE | (uint32_t)PipelineStage::AMPLIFICATION_STAGE |
+			(uint32_t)PipelineStage::RAYTRACING_STAGE | (uint32_t)PipelineStage::VERTEX_STAGE |
+			(uint32_t)PipelineStage::HULL_STAGE | (uint32_t)PipelineStage::DOMAIN_STAGE |
+			(uint32_t)PipelineStage::PIXEL_STAGE | (uint32_t)PipelineStage::GEOMETRY_STAGE;
+		invalidStagesAusent = (invalidStages ^ (stages & invalidStages));
+		return ((stages == filteredStages) && (invalidStagesAusent == invalidStages));
+	}
+	case SampleRenderV2::PipelineType::Mesh:
+	{
+		mandatoryStageCombination1 = (uint32_t)PipelineStage::MESH_STAGE | (uint32_t)PipelineStage::PIXEL_STAGE;
+		filteredStages = stages & mandatoryStageCombination1;
+		invalidStages = (uint32_t)PipelineStage::VERTEX_STAGE | (uint32_t)PipelineStage::HULL_STAGE |
+			(uint32_t)PipelineStage::RAYTRACING_STAGE | (uint32_t)PipelineStage::COMPUTE_STAGE |
+			(uint32_t)PipelineStage::GEOMETRY_STAGE | (uint32_t)PipelineStage::DOMAIN_STAGE;
+		invalidStagesAusent = (invalidStages ^ (stages & invalidStages));
+		return ((filteredStages == mandatoryStageCombination1) && (invalidStagesAusent == invalidStages));
+	}
+	case SampleRenderV2::PipelineType::RayTracing:
+	{	
+		validStageCombination = (uint32_t)PipelineStage::RAYTRACING_STAGE;
+		filteredStages = stages & validStageCombination;
+		invalidStages = (uint32_t)PipelineStage::MESH_STAGE | (uint32_t)PipelineStage::AMPLIFICATION_STAGE |
+			(uint32_t)PipelineStage::COMPUTE_STAGE | (uint32_t)PipelineStage::VERTEX_STAGE |
+			(uint32_t)PipelineStage::HULL_STAGE | (uint32_t)PipelineStage::DOMAIN_STAGE |
+			(uint32_t)PipelineStage::PIXEL_STAGE | (uint32_t)PipelineStage::GEOMETRY_STAGE;
+		invalidStagesAusent = (invalidStages ^ (stages & invalidStages));
+		return (stages == filteredStages) && (invalidStagesAusent == invalidStages);
+	}
+	default:
+		return false;
 	}
 }
