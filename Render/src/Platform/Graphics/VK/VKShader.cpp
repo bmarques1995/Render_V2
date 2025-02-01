@@ -108,14 +108,15 @@ SampleRenderV2::VKShader::VKShader(const std::shared_ptr<VKContext>* context, st
             CreateSampler(element.second);
         }
 
-        auto textures = m_TextureLayout.GetElements();
+        /*auto textures = m_TextureLayout.GetElements();
 
         for (const auto& element : textures)
         {
             CreateTexture(element.second);
-        }
+        }*/
 
         CreateDescriptorSets();
+        //CreateTextureDescriptorSets();
     }
 
     std::vector<VkDynamicState> dynamicStates = {
@@ -274,6 +275,11 @@ void SampleRenderV2::VKShader::UpdateCBuffer(const void* data, size_t size, uint
         MapUniform(data, size, shaderRegister, 0);
     else
         MapUniform(data, size, shaderRegister, (tableIndex - shaderRegister));
+}
+
+void SampleRenderV2::VKShader::UploadTexture2D(const std::shared_ptr<Texture2D>* texture)
+{
+    CreateTextureDescriptorSet((const std::shared_ptr<VKTexture2D>*) texture);
 }
 
 void SampleRenderV2::VKShader::PreallocatesDescSets()
@@ -451,12 +457,10 @@ void SampleRenderV2::VKShader::CreateDescriptorSets()
     auto device = (*m_Context)->GetDevice();
 
     std::vector<VkWriteDescriptorSet> descriptorWrites;
-    std::vector<VkDescriptorImageInfo> imageInfos;
     std::vector<VkDescriptorImageInfo> samplerInfos;
     std::vector<VkDescriptorBufferInfo> bufferInfos;
 
     auto uniforms = m_UniformLayout.GetElements();
-    auto textures = m_TextureLayout.GetElements();
     auto samplers = m_SamplerLayout.GetElements();
 
     size_t i = 0;
@@ -475,18 +479,6 @@ void SampleRenderV2::VKShader::CreateDescriptorSets()
 
             bufferInfos.push_back(bufferInfo);
         }
-    }
-    for (auto& textureElement : textures)
-    {
-
-        //assert(vkr == VK_SUCCESS);
-
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = m_Textures[textureElement.second.GetBindingSlot()].View;
-        imageInfo.sampler = nullptr;
-
-        imageInfos.push_back(imageInfo);
     }
 
     for (auto& samplerElement : samplers)
@@ -521,23 +513,6 @@ void SampleRenderV2::VKShader::CreateDescriptorSets()
     }
 
     i = 0;
-    for (auto& textureElement : textures)
-    {
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = m_DescriptorSets[textureElement.second.GetSpaceSet()];
-        descriptorWrite.dstBinding = textureElement.second.GetBindingSlot();
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = GetNativeDescriptorType(BufferType::TEXTURE_BUFFER);
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pImageInfo = &imageInfos[i];
-
-        descriptorWrites.push_back(descriptorWrite);
-
-        i++;
-    }
-
-    i = 0;
     for (auto& samplerElement : samplers)
     {
         VkWriteDescriptorSet descriptorWrite{};
@@ -556,6 +531,73 @@ void SampleRenderV2::VKShader::CreateDescriptorSets()
 
     vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
     descriptorWrites.clear();
+}
+
+void SampleRenderV2::VKShader::CreateTextureDescriptorSets()
+{
+    VkResult vkr;
+    auto device = (*m_Context)->GetDevice();
+
+    std::vector<VkWriteDescriptorSet> descriptorWrites;
+    std::vector<VkDescriptorImageInfo> imageInfos;
+
+    auto textures = m_TextureLayout.GetElements();
+
+    for (auto& textureElement : textures)
+    {
+
+        //assert(vkr == VK_SUCCESS);
+
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = m_Textures[textureElement.second.GetBindingSlot()].View;
+        imageInfo.sampler = nullptr;
+
+        imageInfos.push_back(imageInfo);
+    }
+
+	size_t i = 0;
+    for (auto& textureElement : textures)
+    {
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = m_DescriptorSets[textureElement.second.GetSpaceSet()];
+        descriptorWrite.dstBinding = textureElement.second.GetBindingSlot();
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = GetNativeDescriptorType(BufferType::TEXTURE_BUFFER);
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pImageInfo = &imageInfos[i];
+
+        descriptorWrites.push_back(descriptorWrite);
+
+        i++;
+    }
+
+    vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+    descriptorWrites.clear();
+}
+
+void SampleRenderV2::VKShader::CreateTextureDescriptorSet(const std::shared_ptr<VKTexture2D>* texture)
+{
+    VkResult vkr;
+    auto device = (*m_Context)->GetDevice();
+
+    VkWriteDescriptorSet descriptorWrite{};
+    VkDescriptorImageInfo imageInfo{};
+
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = (*texture)->GetView();
+    imageInfo.sampler = nullptr;
+
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = m_DescriptorSets[(*texture)->GetTextureDescription().GetSpaceSet()];
+    descriptorWrite.dstBinding = (*texture)->GetTextureDescription().GetBindingSlot();
+    descriptorWrite.dstArrayElement = 0;
+    descriptorWrite.descriptorType = GetNativeDescriptorType(BufferType::TEXTURE_BUFFER);
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pImageInfo = &imageInfo;
+
+    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 }
 
 bool SampleRenderV2::VKShader::IsUniformValid(size_t size)

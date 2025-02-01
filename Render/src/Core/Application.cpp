@@ -69,10 +69,10 @@ SampleRenderV2::Application::Application()
 			{ 0, 64, 0, m_Context->GetSmallBufferAttachment() }
 		}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
 
-	std::shared_ptr<Image> img;
+	/*std::shared_ptr<Image> img;
 	img.reset(Image::CreateImage("./assets/textures/yor.png"));
 	std::shared_ptr<Image> img2;
-	img2.reset(Image::CreateImage("./assets/textures/sample.png"));
+	img2.reset(Image::CreateImage("./assets/textures/sample.png"));*/
 
 	UniformLayout uniformsLayout(
 		{
@@ -87,12 +87,24 @@ SampleRenderV2::Application::Application()
 	//		{ BufferType::UNIFORM_CONSTANT_BUFFER, 256, 1, 0, 1, AccessLevel::DESCRIPTOR_BUFFER, 2, m_Context->GetUniformAttachment() }
 	//	}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
 
+	//TextureLayout textureLayout(
+	//	//std::shared_ptr<Image> img, uint32_t bindingSlot, uint32_t shaderRegister, uint32_t spaceSet, uint32_t samplerRegister, TextureTensor tensor, uint32_t textureIndex, size_t depth
+	//	{
+	//		{img, 3, 3, 0, TextureTensor::TENSOR_2, 0, 1},
+	//		{img2, 4, 3, 0, TextureTensor::TENSOR_2, 1, 1},
+	//	}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
+
+	m_Texture1.reset(Texture2D::Instantiate(&m_Context, "./assets/textures/yor.png", 3, 0, 3, 0));
+	m_Texture2.reset(Texture2D::Instantiate(&m_Context, "./assets/textures/sample.png", 4, 0, 3, 1));
+
 	TextureLayout textureLayout(
 		//std::shared_ptr<Image> img, uint32_t bindingSlot, uint32_t shaderRegister, uint32_t spaceSet, uint32_t samplerRegister, TextureTensor tensor, uint32_t textureIndex, size_t depth
 		{
-			{img, 3, 3, 0, 0, TextureTensor::TENSOR_2, 0, 1},
-			{img2, 4, 3, 0, 0, TextureTensor::TENSOR_2, 1, 1},
+			m_Texture1->GetTextureDescription(),
+			m_Texture2->GetTextureDescription(),
 		}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
+
+	
 
 	SamplerLayout samplerLayout(
 		{
@@ -105,6 +117,8 @@ SampleRenderV2::Application::Application()
 	m_Shader.reset(Shader::Instantiate(&m_Context, "./assets/shaders/HelloTriangle", layout, smallBufferLayout, uniformsLayout, textureLayout, samplerLayout));
 	m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 1, 1);
 	m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 2, 1);
+	m_Shader->UploadTexture2D(&m_Texture1);
+	m_Shader->UploadTexture2D(&m_Texture2);
 	//m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 1, 1);
 	//m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 1, 2);
 	m_VertexBuffer.reset(VertexBuffer::Instantiate(&m_Context, (const void*)&vBuffer[0], sizeof(vBuffer), layout.GetStride()));

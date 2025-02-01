@@ -12,6 +12,7 @@
 #include "LayerStack.hpp"
 #include "Shader.hpp"
 #include "Buffer.hpp"
+#include "Texture.hpp"
 #include <CommonException.hpp>
 #include <memory>
 #include <Eigen/Eigen>
@@ -82,6 +83,8 @@ namespace SampleRenderV2
 		std::shared_ptr<ImguiWindowController> m_ImguiWindowController;
 		std::shared_ptr<Shader> m_Shader;
 		std::shared_ptr<CopyPipeline> m_CopyPipeline;
+		std::shared_ptr<Texture2D> m_Texture1;
+		std::shared_ptr<Texture2D> m_Texture2;
 		std::shared_ptr<VertexBuffer> m_VertexBuffer;
 		std::shared_ptr<IndexBuffer> m_IndexBuffer;
 

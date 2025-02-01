@@ -9,14 +9,13 @@ SampleRenderV2::TextureElement::TextureElement()
 	m_Tensor = TextureTensor::TENSOR_2;
 	m_Image.reset(Image::CreateImage((const std::byte*)&whitePixel, 1, 1, ImageFormat::PNG));
 	m_ShaderRegister = 0;
-	m_SamplerRegister = 0;
 	m_SpaceSet = 0;
 	m_TextureIndex = 0;
 }
 
 //std::shared_ptr<Image> img, uint32_t bindingSlot, uint32_t shaderRegister, uint32_t spaceSet, uint32_t samplerRegister, TextureTensor tensor, size_t depth = 1
-SampleRenderV2::TextureElement::TextureElement(std::shared_ptr<Image> img, uint32_t bindingSlot, uint32_t shaderRegister, uint32_t spaceSet, uint32_t samplerRegister, TextureTensor tensor, uint32_t textureIndex, size_t depth) :
-	m_Image(img), m_Tensor(tensor), m_BindingSlot(bindingSlot), m_ShaderRegister(shaderRegister), m_SpaceSet(spaceSet), m_SamplerRegister(samplerRegister), m_TextureIndex(textureIndex)
+SampleRenderV2::TextureElement::TextureElement(std::shared_ptr<Image> img, uint32_t bindingSlot, uint32_t shaderRegister, uint32_t spaceSet, TextureTensor tensor, uint32_t textureIndex, size_t depth) :
+	m_Image(img), m_Tensor(tensor), m_BindingSlot(bindingSlot), m_ShaderRegister(shaderRegister), m_SpaceSet(spaceSet), m_TextureIndex(textureIndex)
 {
 	m_Depth = std::max<size_t>(1, depth);
 }
@@ -71,14 +70,15 @@ uint32_t SampleRenderV2::TextureElement::GetSpaceSet() const
 	return m_SpaceSet;
 }
 
-uint32_t SampleRenderV2::TextureElement::GetSamplerRegister() const
-{
-	return m_SamplerRegister;
-}
 
 uint32_t SampleRenderV2::TextureElement::GetTextureIndex() const
 {
 	return m_TextureIndex;
+}
+
+void SampleRenderV2::TextureElement::FreeImage()
+{
+	m_Image.reset();
 }
 
 SampleRenderV2::TextureLayout::TextureLayout(std::initializer_list<TextureElement> elements, uint32_t allowedStages) :

@@ -4,6 +4,7 @@
 
 #include "Shader.hpp"
 #include "D3D12Context.hpp"
+#include "D3D12Texture.hpp"
 #include "DXCSafeInclude.hpp"
 #include <json/json.h>
 #include <functional>
@@ -28,16 +29,21 @@ namespace SampleRenderV2
 
 		void BindSmallBuffer(const void* data, size_t size, uint32_t bindingSlot) override;
 
+		void UploadTexture2D(const std::shared_ptr<Texture2D>* texture) override;
+
 		void BindDescriptors() override;
 
 		void UpdateCBuffer(const void* data, size_t size, uint32_t shaderRegister, uint32_t tableIndex) override;
 	private:
+
+		void CreateSRV(const std::shared_ptr<D3D12Texture2D>* texture);
 
 		void PreallocateSamplerDescriptors(uint32_t numOfSamplers, uint32_t rootSigIndex);
 		void CreateSampler(SamplerElement samplerElement);
 
 		void PreallocateTextureDescriptors(uint32_t numOfTextures, uint32_t rootSigIndex);
 		void CreateTexture(TextureElement textureElement);
+		void CreateSRV(TextureElement textureElement);
 		void CopyTextureBuffer(TextureElement textureElement);
 
 		bool IsCBufferValid(size_t size);

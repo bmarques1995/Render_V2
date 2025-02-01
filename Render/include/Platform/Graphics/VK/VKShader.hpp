@@ -2,6 +2,7 @@
 
 #include "Shader.hpp"
 #include "VKContext.hpp"
+#include "VKTexture.hpp"
 #include "DXCSafeInclude.hpp"
 #include <json/json.h>
 #include <functional>
@@ -37,6 +38,8 @@ namespace SampleRenderV2
 		void BindDescriptors() override;
 
 		void UpdateCBuffer(const void* data, size_t size, uint32_t shaderRegister, uint32_t tableIndex) override;
+
+		void UploadTexture2D(const std::shared_ptr<Texture2D>* texture) override;
 	private:
 
 		void PreallocatesDescSets();
@@ -44,6 +47,9 @@ namespace SampleRenderV2
 		void CreateDescriptorSetLayout();
 		void CreateDescriptorPool();
 		void CreateDescriptorSets();
+
+		void CreateTextureDescriptorSets();
+		void CreateTextureDescriptorSet(const std::shared_ptr<VKTexture2D>* texture);
 
 		bool IsUniformValid(size_t size);
 		void PreallocateUniform(const void* data, UniformElement uniformElement, uint32_t offset);

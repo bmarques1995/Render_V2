@@ -17,7 +17,7 @@ namespace SampleRenderV2
 	{
 	public:
 		TextureElement();
-		TextureElement(std::shared_ptr<Image> img, uint32_t bindingSlot, uint32_t shaderRegister, uint32_t spaceSet, uint32_t samplerRegister, TextureTensor tensor, uint32_t textureIndex, size_t depth = 1);
+		TextureElement(std::shared_ptr<Image> img, uint32_t bindingSlot, uint32_t shaderRegister, uint32_t spaceSet, TextureTensor tensor, uint32_t textureIndex, size_t depth = 1);
 
 		const uint8_t* GetTextureBuffer() const;
 		uint32_t GetWidth() const;
@@ -29,8 +29,8 @@ namespace SampleRenderV2
 		uint32_t GetBindingSlot() const;
 		uint32_t GetShaderRegister() const;
 		uint32_t GetSpaceSet() const;
-		uint32_t GetSamplerRegister() const;
 		uint32_t GetTextureIndex() const;
+		void FreeImage();
 	private:
 		TextureTensor m_Tensor;
 		std::shared_ptr<Image> m_Image;
@@ -38,7 +38,6 @@ namespace SampleRenderV2
 		uint32_t m_SpaceSet;
 		uint32_t m_BindingSlot;
 		uint32_t m_ShaderRegister;
-		uint32_t m_SamplerRegister;
 		uint32_t m_TextureIndex;
 	};
 

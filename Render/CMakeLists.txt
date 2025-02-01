@@ -32,6 +32,8 @@ if(WIN32)
 
 	
 	trace_dependency(NAME imgui INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/imgui.ps1")
+	trace_dependency(NAME ktx INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vktex.ps1")
+	trace_dependency(NAME directxtex INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/d3dtex.ps1")
 
 	if(REGISTER_VULKAN_LAYERS)
 

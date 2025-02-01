@@ -3,8 +3,9 @@
 #include "RenderDLLMacro.hpp"
 #include "InputBufferLayout.hpp"
 #include "UniformsLayout.hpp"
-#include "TextureLayout.hpp"
 #include "SamplerLayout.hpp"
+#include "TextureLayout.hpp"
+#include "Texture.hpp"
 #include "GraphicsContext.hpp"
 
 
@@ -23,6 +24,8 @@ namespace SampleRenderV2
 		virtual void Stage() = 0;
 		virtual uint32_t GetStride() const = 0;
 		virtual uint32_t GetOffset() const = 0;
+
+		virtual void UploadTexture2D(const std::shared_ptr<Texture2D>* texture) = 0;
 
 		virtual void BindSmallBuffer(const void* data, size_t size, uint32_t bindingSlot) = 0;
 

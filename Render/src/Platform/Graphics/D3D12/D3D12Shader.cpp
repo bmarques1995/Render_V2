@@ -133,11 +133,12 @@ SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* co
 	hr = device->CreateDescriptorHeap(&srvDescriptorHeapDesc, IID_PPV_ARGS(m_Samplers[samplerElement.GetBindingSlot()].GetAddressOf()));
 	assert(hr == S_OK);*/
 
-	for (auto& texture : m_TextureLayout.GetElements())
+	/*for (auto& texture : m_TextureLayout.GetElements())
 	{
 		CreateTexture(texture.second);
 		CopyTextureBuffer(texture.second);
-	}
+		CreateSRV(texture.second);
+	}*/
 
 	for (auto it = s_GraphicsPipelineStages.begin(); it != s_GraphicsPipelineStages.end(); it++)
 	{
@@ -186,6 +187,11 @@ void SampleRenderV2::D3D12Shader::BindSmallBuffer(const void* data, size_t size,
 	cmdList->SetGraphicsRoot32BitConstants(bindingSlot, size / smallStride, data, m_SmallBufferLayout.GetElement(bindingSlot).GetOffset() / smallStride);
 }
 
+void SampleRenderV2::D3D12Shader::UploadTexture2D(const std::shared_ptr<Texture2D>* texture)
+{
+	CreateSRV((const std::shared_ptr<D3D12Texture2D>*) texture);
+}
+
 void SampleRenderV2::D3D12Shader::BindDescriptors()
 {
 	auto cmdList = (*m_Context)->GetCurrentCommandList();
@@ -209,6 +215,28 @@ void SampleRenderV2::D3D12Shader::BindDescriptors()
 void SampleRenderV2::D3D12Shader::UpdateCBuffer(const void* data, size_t size, uint32_t shaderRegister, uint32_t tableIndex)
 {
 	MapCBuffer(data, size, shaderRegister, tableIndex);
+}
+
+void SampleRenderV2::D3D12Shader::CreateSRV(const std::shared_ptr<D3D12Texture2D>* texture)
+{
+	auto device = (*m_Context)->GetDevicePtr();
+
+	auto srvHeapStartHandle = m_TabledDescriptors[(*texture)->GetTextureDescription().GetShaderRegister()]->GetCPUDescriptorHandleForHeapStart();
+	UINT srvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	srvHeapStartHandle.ptr += ((*texture)->GetTextureDescription().GetTextureIndex() * srvDescriptorSize);
+
+	auto textureBufferDesc = (*texture)->GetResource()->GetDesc1();
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = textureBufferDesc.Format;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = -1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.ResourceMinLODClamp = 0;
+	srvDesc.Texture2D.PlaneSlice = 0;
+
+	device->CreateShaderResourceView((*texture)->GetResource(), &srvDesc, srvHeapStartHandle);
 }
 
 void SampleRenderV2::D3D12Shader::PreallocateSamplerDescriptors(uint32_t numOfSamplers, uint32_t rootSigIndex)
@@ -300,10 +328,18 @@ void SampleRenderV2::D3D12Shader::CreateTexture(TextureElement textureElement)
 		IID_PPV_ARGS(m_SRVResources[textureLocation].GetAddressOf()));
 
 	assert(hr == S_OK);
+}
+
+void SampleRenderV2::D3D12Shader::CreateSRV(TextureElement textureElement)
+{
+	uint64_t textureLocation = ((uint64_t)textureElement.GetShaderRegister() << 32) + textureElement.GetTextureIndex();
+	auto device = (*m_Context)->GetDevicePtr();
 
 	auto srvHeapStartHandle = m_TabledDescriptors[textureElement.GetShaderRegister()]->GetCPUDescriptorHandleForHeapStart();
 	UINT srvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	srvHeapStartHandle.ptr += (textureElement.GetTextureIndex() * srvDescriptorSize);
+
+	auto textureBufferDesc = m_SRVResources[textureLocation]->GetDesc1();
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
 
@@ -387,17 +423,7 @@ void SampleRenderV2::D3D12Shader::CopyTextureBuffer(TextureElement textureElemen
 	destLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 	destLocation.SubresourceIndex = 0;
 
-	D3D12_RESOURCE_DESC1 textureDesc = {};
-	textureDesc.Dimension = GetNativeTensor(textureElement.GetTensor());
-	textureDesc.Width = textureElement.GetWidth(); //mandatory
-	textureDesc.Height = textureElement.GetHeight(); // mandatory 2 and 3
-	textureDesc.DepthOrArraySize = textureElement.GetDepth(); // mandatory 3
-	textureDesc.MipLevels = textureElement.GetMipsLevel(); // param
-	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	textureDesc.SampleDesc.Count = 1;
-	textureDesc.SampleDesc.Quality = 0;
-	textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	D3D12_RESOURCE_DESC1 textureDesc = m_SRVResources[textureLocation]->GetDesc1();
 
 	D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
 	srcLocation.pResource = textureBuffer.Get();
