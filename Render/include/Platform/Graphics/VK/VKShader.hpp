@@ -48,7 +48,6 @@ namespace SampleRenderV2
 		void CreateDescriptorPool();
 		void CreateDescriptorSets();
 
-		void CreateTextureDescriptorSets();
 		void CreateTextureDescriptorSet(const std::shared_ptr<VKTexture2D>* texture);
 
 		bool IsUniformValid(size_t size);

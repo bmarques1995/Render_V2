@@ -43,7 +43,6 @@ namespace SampleRenderV2
 
 		void PreallocateTextureDescriptors(uint32_t numOfTextures, uint32_t rootSigIndex);
 		void CreateTexture(TextureElement textureElement);
-		void CreateSRV(TextureElement textureElement);
 		void CopyTextureBuffer(TextureElement textureElement);
 
 		bool IsCBufferValid(size_t size);

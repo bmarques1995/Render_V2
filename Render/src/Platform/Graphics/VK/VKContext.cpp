@@ -51,10 +51,7 @@ SampleRenderV2::VKContext::VKContext(const Window* windowHandle, uint32_t frames
     m_FramesInFlight(framesInFlight), m_IsVSyncEnabled(true)
 {
     //#d35400
-    m_ClearColor.float32[0] = 0xd3 / 255.0f;
-    m_ClearColor.float32[1] = 0x54 / 255.0f;
-    m_ClearColor.float32[2] = 0.0f;
-    m_ClearColor.float32[3] = 1.0f;
+    SetClearColor(0xd3 / 255.0f, 0x54 / 255.0f, 0x0 / 255.0f, 1.0f);
 
     m_IsWindowClosing = windowHandle->TrackWindowClosing();
 

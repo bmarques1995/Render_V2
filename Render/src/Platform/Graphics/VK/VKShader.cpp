@@ -108,15 +108,7 @@ SampleRenderV2::VKShader::VKShader(const std::shared_ptr<VKContext>* context, st
             CreateSampler(element.second);
         }
 
-        /*auto textures = m_TextureLayout.GetElements();
-
-        for (const auto& element : textures)
-        {
-            CreateTexture(element.second);
-        }*/
-
         CreateDescriptorSets();
-        //CreateTextureDescriptorSets();
     }
 
     std::vector<VkDynamicState> dynamicStates = {
@@ -523,50 +515,6 @@ void SampleRenderV2::VKShader::CreateDescriptorSets()
         descriptorWrite.descriptorType = GetNativeDescriptorType(BufferType::SAMPLER_BUFFER);
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pImageInfo = &samplerInfos[i];
-
-        descriptorWrites.push_back(descriptorWrite);
-
-        i++;
-    }
-
-    vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-    descriptorWrites.clear();
-}
-
-void SampleRenderV2::VKShader::CreateTextureDescriptorSets()
-{
-    VkResult vkr;
-    auto device = (*m_Context)->GetDevice();
-
-    std::vector<VkWriteDescriptorSet> descriptorWrites;
-    std::vector<VkDescriptorImageInfo> imageInfos;
-
-    auto textures = m_TextureLayout.GetElements();
-
-    for (auto& textureElement : textures)
-    {
-
-        //assert(vkr == VK_SUCCESS);
-
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = m_Textures[textureElement.second.GetBindingSlot()].View;
-        imageInfo.sampler = nullptr;
-
-        imageInfos.push_back(imageInfo);
-    }
-
-	size_t i = 0;
-    for (auto& textureElement : textures)
-    {
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = m_DescriptorSets[textureElement.second.GetSpaceSet()];
-        descriptorWrite.dstBinding = textureElement.second.GetBindingSlot();
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = GetNativeDescriptorType(BufferType::TEXTURE_BUFFER);
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pImageInfo = &imageInfos[i];
 
         descriptorWrites.push_back(descriptorWrite);
 

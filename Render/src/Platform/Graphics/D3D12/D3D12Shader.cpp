@@ -121,25 +121,6 @@ SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* co
 	for (auto& desc : m_SamplerDescriptors)
 		m_MergedHeaps.push_back(desc.second.Get());
 
-	/*auto device = (*m_Context)->GetDevicePtr();
-	HRESULT hr;
-
-	D3D12_DESCRIPTOR_HEAP_DESC srvDescriptorHeapDesc{};
-	srvDescriptorHeapDesc.Type = GetNativeHeapType(BufferType::SAMPLER_BUFFER);
-	srvDescriptorHeapDesc.NumDescriptors = 1;
-	srvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	srvDescriptorHeapDesc.NodeMask = 0;
-
-	hr = device->CreateDescriptorHeap(&srvDescriptorHeapDesc, IID_PPV_ARGS(m_Samplers[samplerElement.GetBindingSlot()].GetAddressOf()));
-	assert(hr == S_OK);*/
-
-	/*for (auto& texture : m_TextureLayout.GetElements())
-	{
-		CreateTexture(texture.second);
-		CopyTextureBuffer(texture.second);
-		CreateSRV(texture.second);
-	}*/
-
 	for (auto it = s_GraphicsPipelineStages.begin(); it != s_GraphicsPipelineStages.end(); it++)
 	{
 		PushShader(*it, &graphicsDesc);
@@ -328,48 +309,6 @@ void SampleRenderV2::D3D12Shader::CreateTexture(TextureElement textureElement)
 		IID_PPV_ARGS(m_SRVResources[textureLocation].GetAddressOf()));
 
 	assert(hr == S_OK);
-}
-
-void SampleRenderV2::D3D12Shader::CreateSRV(TextureElement textureElement)
-{
-	uint64_t textureLocation = ((uint64_t)textureElement.GetShaderRegister() << 32) + textureElement.GetTextureIndex();
-	auto device = (*m_Context)->GetDevicePtr();
-
-	auto srvHeapStartHandle = m_TabledDescriptors[textureElement.GetShaderRegister()]->GetCPUDescriptorHandleForHeapStart();
-	UINT srvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	srvHeapStartHandle.ptr += (textureElement.GetTextureIndex() * srvDescriptorSize);
-
-	auto textureBufferDesc = m_SRVResources[textureLocation]->GetDesc1();
-
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
-
-	//This can define the mips levels
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = textureBufferDesc.Format;
-	switch (textureElement.GetTensor())
-	{
-	case TextureTensor::TENSOR_1:
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
-		srvDesc.Texture1D.MipLevels = -1;
-		srvDesc.Texture1D.MostDetailedMip = 0;
-		srvDesc.Texture1D.ResourceMinLODClamp = 0;
-		break;
-	case TextureTensor::TENSOR_2:
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MipLevels = -1;
-		srvDesc.Texture2D.MostDetailedMip = 0;
-		srvDesc.Texture2D.ResourceMinLODClamp = 0;
-		srvDesc.Texture2D.PlaneSlice = 0;
-		break;
-	case TextureTensor::TENSOR_3:
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-		srvDesc.Texture3D.MipLevels = -1;
-		srvDesc.Texture3D.MostDetailedMip = 0;
-		srvDesc.Texture3D.ResourceMinLODClamp = 0;
-		break;
-	}
-
-	device->CreateShaderResourceView(m_SRVResources[textureLocation].Get(), &srvDesc, srvHeapStartHandle);
 }
 
 void SampleRenderV2::D3D12Shader::CopyTextureBuffer(TextureElement textureElement)

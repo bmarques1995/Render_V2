@@ -69,11 +69,6 @@ SampleRenderV2::Application::Application()
 			{ 0, 64, 0, m_Context->GetSmallBufferAttachment() }
 		}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
 
-	/*std::shared_ptr<Image> img;
-	img.reset(Image::CreateImage("./assets/textures/yor.png"));
-	std::shared_ptr<Image> img2;
-	img2.reset(Image::CreateImage("./assets/textures/sample.png"));*/
-
 	UniformLayout uniformsLayout(
 		{
 			//BufferType bufferType, size_t size, uint32_t bindingSlot, uint32_t spaceSet, uint32_t shaderRegister, AccessLevel accessLevel, uint32_t numberOfBuffers, uint32_t bufferAttachment
@@ -87,18 +82,11 @@ SampleRenderV2::Application::Application()
 	//		{ BufferType::UNIFORM_CONSTANT_BUFFER, 256, 1, 0, 1, AccessLevel::DESCRIPTOR_BUFFER, 2, m_Context->GetUniformAttachment() }
 	//	}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
 
-	//TextureLayout textureLayout(
-	//	//std::shared_ptr<Image> img, uint32_t bindingSlot, uint32_t shaderRegister, uint32_t spaceSet, uint32_t samplerRegister, TextureTensor tensor, uint32_t textureIndex, size_t depth
-	//	{
-	//		{img, 3, 3, 0, TextureTensor::TENSOR_2, 0, 1},
-	//		{img2, 4, 3, 0, TextureTensor::TENSOR_2, 1, 1},
-	//	}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
 
 	m_Texture1.reset(Texture2D::Instantiate(&m_Context, "./assets/textures/yor.png", 3, 0, 3, 0));
 	m_Texture2.reset(Texture2D::Instantiate(&m_Context, "./assets/textures/sample.png", 4, 0, 3, 1));
 
 	TextureLayout textureLayout(
-		//std::shared_ptr<Image> img, uint32_t bindingSlot, uint32_t shaderRegister, uint32_t spaceSet, uint32_t samplerRegister, TextureTensor tensor, uint32_t textureIndex, size_t depth
 		{
 			m_Texture1->GetTextureDescription(),
 			m_Texture2->GetTextureDescription(),
