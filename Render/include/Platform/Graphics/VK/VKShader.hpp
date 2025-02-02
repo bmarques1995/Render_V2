@@ -16,13 +16,6 @@ namespace SampleRenderV2
 		VkDeviceMemory Memory;
 	};
 
-	struct IMGB
-	{
-		VkImage Resource;
-		VkDeviceMemory Memory;
-		VkImageView View;
-	};
-
 	class SAMPLE_RENDER_DLL_COMMAND VKShader : public Shader
 	{
 	public:
@@ -57,10 +50,6 @@ namespace SampleRenderV2
 
 		void CreateSampler(SamplerElement samplerElement);
 
-		void CreateTexture(TextureElement textureElement);
-		void AllocateTexture(TextureElement textureElement);
-		void CopyTextureBuffer(TextureElement textureElement);
-
 		void PushShader(std::string_view stage, VkPipelineShaderStageCreateInfo* graphicsDesc);
 		void InitJsonAndPaths(std::string json_controller_path);
 		void SetRasterizer(VkPipelineRasterizationStateCreateInfo* rasterizer);
@@ -89,7 +78,6 @@ namespace SampleRenderV2
 
 		std::unordered_map<uint32_t, RM> m_Uniforms;
 		std::unordered_map<uint32_t, VkSampler> m_Samplers;
-		std::unordered_map<uint32_t, IMGB> m_Textures;
 
 		Json::Value m_PipelineInfo;
 

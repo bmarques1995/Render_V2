@@ -1,18 +1,18 @@
 #include "AppContext.hpp"
 
-#ifdef WIN32
+#ifdef WINDOWED_APP
 #include <windows.h>
 #include <shellapi.h>
 #endif
 
 
-#ifdef WIN32
+#ifdef WINDOWED_APP
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 #else
 int main(int argc, char** argv)
 #endif
 {
-#ifdef WIN32
+#ifdef WINDOWED_APP
     LPWSTR* wargv;
     int argc;
 
@@ -37,6 +37,8 @@ int main(int argc, char** argv)
 	delete app;
 
     // Free memory allocated by CommandLineToArgvW
+#ifdef WINDOWED_APP
     LocalFree(wargv);
+#endif
 	return 0;
 }

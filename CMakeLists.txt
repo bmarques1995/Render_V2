@@ -7,6 +7,7 @@ project ("SampleRender" VERSION 0.0.1)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 option(REGISTER_VULKAN_LAYERS "Set vulkan layers location on regedit" OFF)
+option(BUILD_WINDOWED_APP "Build windowed application" OFF)
 
 # Habilite a Recarga Dinâmica para compiladores MSVC, se houver suporte.
 if (POLICY CMP0141)

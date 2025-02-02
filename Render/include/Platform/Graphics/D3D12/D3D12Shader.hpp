@@ -42,8 +42,6 @@ namespace SampleRenderV2
 		void CreateSampler(SamplerElement samplerElement);
 
 		void PreallocateTextureDescriptors(uint32_t numOfTextures, uint32_t rootSigIndex);
-		void CreateTexture(TextureElement textureElement);
-		void CopyTextureBuffer(TextureElement textureElement);
 
 		bool IsCBufferValid(size_t size);
 		void PreallocateRootCBuffer(const void* data, UniformElement uniformElement);

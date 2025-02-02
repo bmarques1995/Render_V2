@@ -116,7 +116,7 @@ if(WIN32)
 
 	target_link_libraries(${TARGET_NAME} PRIVATE d3d12 dxgi dxguid)
 endif()
-target_link_libraries(${TARGET_NAME} PUBLIC imgui::imgui Eigen3::Eigen ShaderManager PRIVATE ${CMAKE_PREFIX_PATH}/lib/dxcompiler.lib Vulkan::Headers Vulkan::Loader SDL3::SDL3-shared Utils)
+target_link_libraries(${TARGET_NAME} PUBLIC imgui::imgui Eigen3::Eigen ShaderManager PRIVATE ${CMAKE_PREFIX_PATH}/lib/dxcompiler.lib Vulkan::Headers Vulkan::Loader KTX::ktx SDL3::SDL3-shared Utils)
 
 if(BUILD_SHARED_LIBS)
 	if(WIN32)

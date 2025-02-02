@@ -139,6 +139,8 @@ void SampleRenderV2::Application::StartApplication()
 
 SampleRenderV2::Application::~Application()
 {
+	m_Texture2.reset();
+	m_Texture1.reset();
 	m_IndexBuffer.reset();
 	m_VertexBuffer.reset();
 	m_Shader.reset();

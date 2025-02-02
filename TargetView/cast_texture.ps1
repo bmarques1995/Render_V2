@@ -9,6 +9,7 @@ if (($texturePath -ne "") -and ($prefixPath -ne ""))
     $d3dMipArg = ""
     $d3dFormat = "R8G8B8A8_UNORM"
     $vkMipArg = ""
+    $vkSrgb = "linear"
     if($genMipMap -eq $true)
     {
 		$d3dMipArg = "-m 0"
@@ -19,6 +20,7 @@ if (($texturePath -ne "") -and ($prefixPath -ne ""))
 	if($isSRGB -eq $true)
     {
         $d3dFormat = "R8G8B8A8_UNORM_SRGB"
+        $vkSrgb = "srgb"
     }
 
     $basename = (Get-Item $texturePath ).Basename
