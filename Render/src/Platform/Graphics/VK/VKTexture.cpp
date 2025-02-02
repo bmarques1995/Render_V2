@@ -13,6 +13,10 @@ SampleRenderV2::VKTexture2D::VKTexture2D(const std::shared_ptr<VKContext>* conte
     m_Specification.FreeImage();
 }
 
+SampleRenderV2::VKTexture2D::VKTexture2D(const std::shared_ptr<VKContext>* context, const TextureElement& specification, std::string native_texture_path)
+{
+}
+
 SampleRenderV2::VKTexture2D::~VKTexture2D()
 {
 }

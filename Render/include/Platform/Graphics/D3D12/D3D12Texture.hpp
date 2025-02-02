@@ -11,6 +11,7 @@ namespace SampleRenderV2
 	{
 	public:
 		D3D12Texture2D(const std::shared_ptr<D3D12Context>* context, const TextureElement& specification);
+		D3D12Texture2D(const std::shared_ptr<D3D12Context>* context, const TextureElement& specification, std::string native_texture_path);
 		~D3D12Texture2D();
 
 		const TextureElement& GetTextureDescription() const override;
@@ -24,7 +25,12 @@ namespace SampleRenderV2
 
 	private:
 		void CreateResource();
+		void CreateResource(const D3D12_RESOURCE_DESC1& desc);
 		void CopyBuffer();
+
+		void CopyDefinitiveBuffer(ID3D12Resource2* buffer);
+
+		void CopyDDSBuffer(ID3D12Resource2* buffer, std::vector<D3D12_SUBRESOURCE_DATA>* subresources);
 
 		static D3D12_RESOURCE_DIMENSION GetNativeTensor(TextureTensor tensor);
 

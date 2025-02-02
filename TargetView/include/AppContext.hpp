@@ -5,6 +5,7 @@
 class AppContext : public SampleRenderV2::Application
 {
 public:
-	AppContext();
+	AppContext(int argc, char** argv);
+	AppContext(int argc, wchar_t** wargv);
 	~AppContext() = default;
 };

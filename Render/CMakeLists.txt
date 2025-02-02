@@ -58,8 +58,41 @@ else()
 	target_compile_definitions(${TARGET_NAME} PUBLIC RENDER_RELEASE_MODE)
 endif()
 
+# Set URLs for images
+set(DDS_HEADERS
+    "https://raw.githubusercontent.com/microsoft/DirectXTex/refs/heads/main/DDSTextureLoader/DDSTextureLoader12.h"
+    "https://raw.githubusercontent.com/microsoft/DirectXTex/refs/heads/main/Common/d3dx12.h"
+)
+
+set(DDS_SOURCE "https://raw.githubusercontent.com/microsoft/DirectXTex/refs/heads/main/DDSTextureLoader/DDSTextureLoader12.cpp")
+
 if(WIN32)
+
+	# Set the download directory (e.g., CMake's binary directory)
+	set(DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/Platform/Graphics/Texture/DDS")
+
+	# Loop through each image URL and download it
+	foreach(DDS_HEADER ${DDS_HEADERS})
+		# Extract the filename from the URL
+		get_filename_component(HEADER_NAME ${DDS_HEADER} NAME)
+		set(OUTPUT_FILE "${DOWNLOAD_DIR}/${HEADER_NAME}")
+
+		# Download the file
+		file(DOWNLOAD ${DDS_HEADER} ${OUTPUT_FILE} SHOW_PROGRESS)
+		message(STATUS "Downloaded ${HEADER_NAME} to ${OUTPUT_FILE}")
+	endforeach()
+
+	set(DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/Graphics/Texture/DDS")
+
+	get_filename_component(SOURCE_NAME ${DDS_SOURCE} NAME)
+	set(OUTPUT_FILE "${DOWNLOAD_DIR}/${SOURCE_NAME}")
+
+	# Download the file
+	file(DOWNLOAD ${DDS_SOURCE} ${OUTPUT_FILE} SHOW_PROGRESS)
+	message(STATUS "Downloaded ${SOURCE_NAME} to ${OUTPUT_FILE}")
+
 	target_include_directories(${TARGET_NAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Platform/Graphics/D3D12>)
+	target_include_directories(${TARGET_NAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Platform/Graphics/Texture/DDS>)
 	add_custom_target(copy_d3d12 ALL
 			COMMAND ${CMAKE_COMMAND} -E copy
 			"${PROJECT_SOURCE_DIR}/D3D12Core/build/native/bin/x64/D3D12Core.dll"

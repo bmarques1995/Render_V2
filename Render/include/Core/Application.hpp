@@ -9,6 +9,7 @@
 #include "CopyPipeline.hpp"
 #include "CSOCompiler.hpp"
 #include "SPVCompiler.hpp"
+#include "TextureCaster.hpp"
 #include "LayerStack.hpp"
 #include "Shader.hpp"
 #include "Buffer.hpp"
@@ -23,7 +24,8 @@ namespace SampleRenderV2
 	class SAMPLE_RENDER_DLL_COMMAND Application
 	{
 	public:
-		Application();
+		Application(int argc, char** argv);
+		Application(int argc, wchar_t** wargv);
 		~Application();
 
 		void Run();
@@ -34,6 +36,11 @@ namespace SampleRenderV2
 		inline GraphicsAPI GetCurrentAPI()
 		{
 			return m_Starter->GetCurrentAPI();;
+		}
+
+		inline const std::string& GetRunningDirectory() const
+		{ 
+			return m_RunningDirectory;
 		}
 
 		inline const std::shared_ptr<Window>& GetWindow() const 
@@ -47,6 +54,8 @@ namespace SampleRenderV2
 		}*/
 
 	protected:
+
+		void StartApplication();
 
 		Eigen::Vector<float, 9> vBuffer[4] =
 		{
@@ -78,6 +87,7 @@ namespace SampleRenderV2
 		SmallMVP m_SmallMVP;
 		CompleteMVP m_CompleteMVP;
 
+		std::string m_RunningDirectory;
 		std::shared_ptr<Window> m_Window;
 		std::shared_ptr<GraphicsContext> m_Context;
 		std::shared_ptr<ImguiWindowController> m_ImguiWindowController;
@@ -87,6 +97,7 @@ namespace SampleRenderV2
 		std::shared_ptr<Texture2D> m_Texture2;
 		std::shared_ptr<VertexBuffer> m_VertexBuffer;
 		std::shared_ptr<IndexBuffer> m_IndexBuffer;
+		//std::shared_ptr<TextureCaster> m_TextureCaster;
 
 		std::shared_ptr<CSOCompiler> m_CSOCompiler;
 		std::shared_ptr<SPVCompiler> m_SPVCompiler;

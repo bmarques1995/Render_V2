@@ -6,13 +6,32 @@
 #include "Image.hpp"
 #include "TextureLayout.hpp"
 #include "SamplerLayout.hpp"
+#include <filesystem>
+
+using std::filesystem::path;
 
 SampleRenderV2::Application* SampleRenderV2::Application::s_AppSingleton = nullptr;
 bool SampleRenderV2::Application::s_SingletonEnabled = false;
 
-SampleRenderV2::Application::Application()
+SampleRenderV2::Application::Application(int argc, char** argv)
+{
+	path location = argv[0];
+	m_RunningDirectory = std::filesystem::absolute(location.parent_path()).string();
+	StartApplication();
+}
+
+SampleRenderV2::Application::Application(int argc, wchar_t** wargv)
+{
+	path location = wargv[0];
+	m_RunningDirectory = std::filesystem::absolute(location.parent_path()).string();
+	StartApplication();
+}
+
+void SampleRenderV2::Application::StartApplication()
 {
 	EnableSingleton(this);
+
+	std::replace(m_RunningDirectory.begin(), m_RunningDirectory.end(), '\\', '/');
 
 	m_CompleteMVP = {
 		Eigen::Matrix4f::Identity(),
@@ -35,6 +54,11 @@ SampleRenderV2::Application::Application()
 	std::stringstream buffer;
 	buffer << "SampleRender Window [" << (m_Starter->GetCurrentAPI() == GraphicsAPI::SAMPLE_RENDER_GRAPHICS_API_VK ? "Vulkan" : "D3D12") << "]";
 	m_Window->ResetTitle(buffer.str());
+
+	/*m_TextureCaster.reset(TextureCaster::Instantiate(true));
+	m_TextureCaster->PushTexture("./assets/textures/yor.png");
+	m_TextureCaster->PushTexture("./assets/textures/sample.png");
+	m_TextureCaster->CastToPlatformTextures();*/
 
 	ImguiContext::StartImgui();
 
@@ -83,7 +107,7 @@ SampleRenderV2::Application::Application()
 	//	}, AllowedStages::VERTEX_STAGE | AllowedStages::PIXEL_STAGE);
 
 
-	m_Texture1.reset(Texture2D::Instantiate(&m_Context, "./assets/textures/yor.png", 3, 0, 3, 0));
+	m_Texture1.reset(Texture2D::Instantiate(&m_Context, "./assets/textures/yor.[[native]]", 3, 0, 3, 0));
 	m_Texture2.reset(Texture2D::Instantiate(&m_Context, "./assets/textures/sample.png", 4, 0, 3, 1));
 
 	TextureLayout textureLayout(

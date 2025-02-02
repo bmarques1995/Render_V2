@@ -9,6 +9,7 @@ namespace SampleRenderV2
 	{
 	public:
 		VKTexture2D(const std::shared_ptr<VKContext>* context, const TextureElement& specification);
+		VKTexture2D(const std::shared_ptr<VKContext>* context, const TextureElement& specification, std::string native_texture_path);
 		~VKTexture2D();
 
 		const TextureElement& GetTextureDescription() const override;

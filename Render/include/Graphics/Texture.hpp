@@ -24,8 +24,6 @@ namespace SampleRenderV2
 	{
 	public:
 		virtual ~Texture2D() = default;
-
-		static Texture2D* Instantiate(const std::shared_ptr<GraphicsContext>* context, const TextureElement& specification);
 		// For Vulkan, I'm using the location mapping slot and spaceSet(std140(slot, spaceSet)) to locate the texture
 		// For D3D12, I'm using the heapSlot(RootSignature descriptor range index) and textureIndex(a descriptor table can handle multiple textures)
 		// In the moment that I add shaders preprocessing, I will set these parameters to the shader result
