@@ -18,21 +18,38 @@ SampleRenderV2::TextureElement::TextureElement(std::shared_ptr<Image> img, uint3
 	m_Image(img), m_Tensor(tensor), m_BindingSlot(bindingSlot), m_ShaderRegister(shaderRegister), m_SpaceSet(spaceSet), m_TextureIndex(textureIndex)
 {
 	m_Depth = std::max<size_t>(1, depth);
+	if (img)
+	{
+		m_Width = img->GetWidth();
+		m_Height = img->GetHeight();
+		m_MipsLevel = img->GetMips();
+		m_Channels = img->GetChannels();
+	}
+	else
+	{
+		m_Width = 0;
+		m_Height = 0;
+		m_MipsLevel = 0;
+		m_Channels = 4;
+	}
 }
 
 const uint8_t* SampleRenderV2::TextureElement::GetTextureBuffer() const
 {
-	return m_Image->GetRawPointer();
+	if(m_Image)
+		return m_Image->GetRawPointer();
+	else
+		return nullptr;
 }
 
 uint32_t SampleRenderV2::TextureElement::GetWidth() const
 {
-	return m_Image->GetWidth();
+	return m_Width;
 }
 
 uint32_t SampleRenderV2::TextureElement::GetHeight() const
 {
-	return m_Image->GetHeight();
+	return m_Height;
 }
 
 uint32_t SampleRenderV2::TextureElement::GetDepth() const
@@ -42,12 +59,12 @@ uint32_t SampleRenderV2::TextureElement::GetDepth() const
 
 uint32_t SampleRenderV2::TextureElement::GetMipsLevel() const
 {
-	return m_Image->GetMips();
+	return m_MipsLevel;
 }
 
 uint32_t SampleRenderV2::TextureElement::GetChannels() const
 {
-	return m_Image->GetChannels();
+	return m_Channels;
 }
 
 SampleRenderV2::TextureTensor SampleRenderV2::TextureElement::GetTensor() const

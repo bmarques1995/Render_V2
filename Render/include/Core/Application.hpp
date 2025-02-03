@@ -17,6 +17,7 @@
 #include <CommonException.hpp>
 #include <memory>
 #include <Eigen/Eigen>
+#include <thread>
 
 
 namespace SampleRenderV2
@@ -81,7 +82,7 @@ namespace SampleRenderV2
 			Eigen::Matrix4f model;
 			Eigen::Matrix4f view;
 			Eigen::Matrix4f projection;
-			Eigen::Matrix4f fill;
+			Eigen::Matrix4f mipLevel;
 		};
 
 		SmallMVP m_SmallMVP;
@@ -105,6 +106,7 @@ namespace SampleRenderV2
 		std::shared_ptr<ImguiContext> m_ImguiContext;
 		std::unique_ptr<ApplicationStarter> m_Starter;
 
+		std::thread* m_LoaderThread;
 		static Application* s_AppSingleton;
 		static bool s_SingletonEnabled;
 		LayerStack m_LayerStack;

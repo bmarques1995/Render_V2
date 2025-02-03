@@ -15,6 +15,11 @@ namespace SampleRenderV2
 
 	class SAMPLE_SHADER_MNG_DLL_COMMAND TextureElement
 	{
+		friend class Texture2D;
+		friend class VKTexture2D;
+#ifdef SHADER_MNG_USES_WINDOWS
+		friend class D3D12Texture2D;
+#endif
 	public:
 		TextureElement();
 		TextureElement(std::shared_ptr<Image> img, uint32_t bindingSlot, uint32_t shaderRegister, uint32_t spaceSet, TextureTensor tensor, uint32_t textureIndex, size_t depth = 1);
@@ -35,6 +40,10 @@ namespace SampleRenderV2
 		TextureTensor m_Tensor;
 		std::shared_ptr<Image> m_Image;
 		size_t m_Depth;
+		uint32_t m_Width;
+		uint32_t m_Height;
+		uint32_t m_MipsLevel;
+		uint32_t m_Channels;
 		uint32_t m_SpaceSet;
 		uint32_t m_BindingSlot;
 		uint32_t m_ShaderRegister;

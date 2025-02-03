@@ -2,8 +2,22 @@
 #include <cassert>
 #include "VKCopyPipeline.hpp"
 #include "Application.hpp"
-#include <ktx.h>
+
 #include <vulkan/vulkan.hpp>
+
+typedef struct user_cbdata_optimal {
+    VkBufferImageCopy* region; // Specify destination region in final image.
+    VkDeviceSize offset;       // Offset of current level in staging buffer
+    ktx_uint32_t numFaces;
+    ktx_uint32_t numLayers;
+    // The following are used only by optimalTilingPadCallback
+    ktx_uint8_t* dest;         // Pointer to mapped staging buffer.
+    ktx_uint32_t elementSize;
+    ktx_uint32_t numDimensions;
+#if defined(_DEBUG)
+    VkBufferImageCopy* regionsArrayEnd;
+#endif
+} user_cbdata_optimal;
 
 SampleRenderV2::VKTexture2D::VKTexture2D(const std::shared_ptr<VKContext>* context, const TextureElement& specification) :
     m_Context(context), m_Specification(specification), m_UsingKTX(false)
@@ -19,7 +33,12 @@ SampleRenderV2::VKTexture2D::VKTexture2D(const std::shared_ptr<VKContext>* conte
     m_Context(context), m_Specification(specification), m_UsingKTX(false)
 {
     m_Loaded = false;
-    CreateKTXResource(native_texture_path);
+    ktxTexture2* kTextureBuffer;
+    CreateKTXBuffer(native_texture_path, &kTextureBuffer);
+    CreateKTXResourceRaw(kTextureBuffer);
+    CopyKTXBufferRaw(kTextureBuffer);
+    UpdateTextureInfo(*kTextureBuffer);
+    ktxTexture2_Destroy(kTextureBuffer);
     m_Loaded = true;
     m_Specification.FreeImage();
 }
@@ -28,20 +47,9 @@ SampleRenderV2::VKTexture2D::~VKTexture2D()
 {
     auto device = (*m_Context)->GetDevice();
     vkDeviceWaitIdle(device);
-
-    if (m_UsingKTX)
-    {
-        m_Memory = nullptr;
-        m_Resource = nullptr;
-        vkDestroyImageView(device, m_ResourceView, nullptr);
-        ktxVulkanTexture_Destruct(&m_KTXBuffer, device, nullptr);
-    }
-    else
-    {
-        vkDestroyImageView(device, m_ResourceView, nullptr);
-        vkFreeMemory(device, m_Memory, nullptr);
-        vkDestroyImage(device, m_Resource, nullptr);
-    }
+    vkDestroyImageView(device, m_ResourceView, nullptr);
+    vkFreeMemory(device, m_Memory, nullptr);
+    vkDestroyImage(device, m_Resource, nullptr);
 }
 
 const SampleRenderV2::TextureElement& SampleRenderV2::VKTexture2D::GetTextureDescription() const
@@ -262,39 +270,25 @@ void SampleRenderV2::VKTexture2D::CopyBuffer()
     vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
-void SampleRenderV2::VKTexture2D::CreateKTXResource(std::string native_texture_path)
+void SampleRenderV2::VKTexture2D::UpdateTextureInfo(const ktxTexture2& kTexture)
 {
-    VkResult vkr;
+    m_Specification.m_Width = kTexture.baseWidth;
+    m_Specification.m_Height = kTexture.baseHeight;
+    m_Specification.m_Depth = kTexture.baseDepth;
+    m_Specification.m_MipsLevel = kTexture.numLevels;
+    m_Specification.m_Channels = 4;
+}
+
+void SampleRenderV2::VKTexture2D::CreateKTXBuffer(std::string native_texture_path, ktxTexture2** kTextureBuffer)
+{
     ktxResult ktxr;
-    auto device = (*m_Context)->GetDevice();
     auto adapter = (*m_Context)->GetAdapter();
-    std::shared_ptr<VKCopyPipeline>* copyPipeline = (std::shared_ptr<VKCopyPipeline>*)
-        (Application::GetInstance()->GetCopyPipeline());
-
-    auto copyCommandBuffer = (*copyPipeline)->GetCommandBuffer();
-    auto copyCommandPool = (*copyPipeline)->GetCommandPool();
-    auto copyQueue = (*copyPipeline)->GetCopyQueue();
-    
-    ktxTexture2* kTexture;
-    KTX_error_code result;
-    ktx_size_t offset;
-    ktx_uint8_t* image;
-    ktx_uint32_t level, layer, faceSlice;
-    ktxVulkanDeviceInfo vdi;
-    ktxVulkanTexture texture;
-
-    // Set up Vulkan physical device (gpu), logical device (device), queue
-    // and command pool. Save the handles to these in a struct called vkctx.
-    // ktx VulkanDeviceInfo is used to pass these with the expectation that
-    // apps are likely to upload a large number of textures.
-    ktxVulkanDeviceInfo_Construct(&vdi, adapter, device,
-        copyQueue, copyCommandPool, nullptr);
-
     ktxr = ktxTexture2_CreateFromNamedFile(native_texture_path.c_str(),
         KTX_TEXTURE_CREATE_NO_FLAGS,
-        &kTexture);
+        kTextureBuffer);
 
-    if (ktxTexture2_NeedsTranscoding(kTexture)) {
+    if (ktxTexture2_NeedsTranscoding(*kTextureBuffer))
+    {
         ktx_transcode_fmt_e tf = KTX_TTF_ASTC_4x4_RGBA;
 
         // Using VkGetPhysicalDeviceFeatures or GL_COMPRESSED_TEXTURE_FORMATS or
@@ -302,7 +296,7 @@ void SampleRenderV2::VKTexture2D::CreateKTXResource(std::string native_texture_p
         // supported and pick a format. For example
         VkPhysicalDeviceFeatures deviceFeatures;
         vkGetPhysicalDeviceFeatures(adapter, &deviceFeatures);
-        khr_df_model_e colorModel = ktxTexture2_GetColorModel_e(kTexture);
+        khr_df_model_e colorModel = ktxTexture2_GetColorModel_e(*kTextureBuffer);
         if (colorModel == KHR_DF_MODEL_UASTC
             && deviceFeatures.textureCompressionASTC_LDR) {
             tf = KTX_TTF_ASTC_4x4_RGBA;
@@ -322,35 +316,246 @@ void SampleRenderV2::VKTexture2D::CreateKTXResource(std::string native_texture_p
             Console::CoreError("Vulkan implementation does not support any available transcode target.");
         }
 
-        ktxr = ktxTexture2_TranscodeBasis(kTexture, tf, 0);
-
-        // Then use VkUpload or GLUpload to create a texture object on the GPU.
+        ktxr = ktxTexture2_TranscodeBasis(*kTextureBuffer, tf, 0);
     }
+}
 
-    ktxr = ktxTexture2_VkUploadEx(kTexture, &vdi, &m_KTXBuffer,
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+void SampleRenderV2::VKTexture2D::CreateKTXResourceRaw(ktxTexture2* rawTexture)
+{
+    VkResult vkr;
+    ktxResult ktxr;
+    auto device = (*m_Context)->GetDevice();
 
-    m_Resource = m_KTXBuffer.image;
-	m_Memory = m_KTXBuffer.deviceMemory;
+    VkMemoryRequirements memRequirements;
+    VkMemoryAllocateInfo allocInfo{};
+    VkMemoryPropertyFlags properties;
+
+    VkImageSubresourceRange subresourceRange;
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = rawTexture->numLevels;
+    subresourceRange.baseArrayLayer = 0;
+    subresourceRange.layerCount = rawTexture->numLayers;
+
+    VkImageCreateInfo        imageCreateInfo = {
+         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+         .pNext = NULL
+    };
+    // Create optimal tiled target image
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.flags = 0;
+    imageCreateInfo.format = (VkFormat)rawTexture->vkFormat;
+    // numImageLevels ensures enough levels for generateMipmaps.
+    imageCreateInfo.mipLevels = rawTexture->numLevels;
+    imageCreateInfo.arrayLayers = rawTexture->numLayers;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageCreateInfo.extent.width = rawTexture->baseWidth;
+    imageCreateInfo.extent.height = rawTexture->baseHeight;
+    imageCreateInfo.extent.depth = rawTexture->baseDepth;
+
+    vkr = vkCreateImage(device, &imageCreateInfo, nullptr, &m_Resource);
+    assert(vkr == VK_SUCCESS);
+
+    memRequirements = {};
+    vkGetImageMemoryRequirements(device, m_Resource, &memRequirements);
+
+    properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+    allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+    vkr = vkAllocateMemory(device, &allocInfo, nullptr, &m_Memory);
+    assert(vkr == VK_SUCCESS);
+
+    vkr = vkBindImageMemory(device, m_Resource, m_Memory, 0);
+    assert(vkr == VK_SUCCESS);
 
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = m_Resource;
-    viewInfo.viewType = m_KTXBuffer.viewType;
-    viewInfo.format = (VkFormat)kTexture->vkFormat;
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = kTexture->numLevels;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
-
+    viewInfo.viewType = GetNativeTensorView(m_Specification.GetTensor());
+    viewInfo.format = (VkFormat)rawTexture->vkFormat;
+    viewInfo.subresourceRange = subresourceRange;
     vkr = vkCreateImageView(device, &viewInfo, nullptr, &m_ResourceView);
     assert(vkr == VK_SUCCESS);
+}
 
-    ktxTexture2_Destroy(kTexture);
-    ktxVulkanDeviceInfo_Destruct(&vdi);
+void SampleRenderV2::VKTexture2D::CopyKTXBufferRaw(ktxTexture2* rawTexture)
+{
+    VkResult vkr;
+    ktxResult ktxr;
+    auto device = (*m_Context)->GetDevice();
+    std::shared_ptr<VKCopyPipeline>* copyPipeline = (std::shared_ptr<VKCopyPipeline>*)
+        (Application::GetInstance()->GetCopyPipeline());
+
+    auto copyCommandBuffer = (*copyPipeline)->GetCommandBuffer();
+    auto copyCommandPool = (*copyPipeline)->GetCommandPool();
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    VkMemoryRequirements memRequirements;
+    VkMemoryAllocateInfo allocInfo{};
+    VkMemoryPropertyFlags properties;
+
+    VkImageSubresourceRange subresourceRange;
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = rawTexture->numLevels;
+    subresourceRange.baseArrayLayer = 0;
+    subresourceRange.layerCount = rawTexture->numLayers;
+
+    uint32_t regionsNumber = rawTexture->numLevels;
+    VkBufferImageCopy* regions = new VkBufferImageCopy[regionsNumber];
+
+    size_t textureSize = ktxTexture_GetDataSizeUncompressed((ktxTexture*)rawTexture);
+
+    properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = textureSize;
+    bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.pNext = nullptr;
+
+    vkr = vkCreateBuffer(device, &bufferInfo, nullptr, &stagingBuffer);
+    assert(vkr == VK_SUCCESS);
+
+
+    vkGetBufferMemoryRequirements(device, stagingBuffer, &memRequirements);
+
+    allocInfo = {};
+
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+    allocInfo.allocationSize = memRequirements.size;
+
+    vkr = vkAllocateMemory(device, &allocInfo, nullptr, &stagingBufferMemory);
+    assert(vkr == VK_SUCCESS);
+
+    vkBindBufferMemory(device, stagingBuffer, stagingBufferMemory, 0);
+
+    ktx_uint8_t* pMappedStagingBuffer;
+    vkr = vkMapMemory(device, stagingBufferMemory, 0, textureSize, 0, (void**)&pMappedStagingBuffer);
+    assert(vkr == VK_SUCCESS);
+
+    user_cbdata_optimal cbData;
+    cbData.offset = 0;
+    cbData.region = regions;
+    cbData.numFaces = rawTexture->numFaces;
+    cbData.numLayers = rawTexture->numLayers;
+    cbData.dest = pMappedStagingBuffer;
+    cbData.elementSize = ktxTexture_GetElementSize((ktxTexture*)rawTexture);
+    cbData.numDimensions = rawTexture->numDimensions;
+#if defined(_DEBUG)
+    cbData.regionsArrayEnd = regions + regionsNumber;
+#endif
+
+    assert(rawTexture->dataSize <= allocInfo.allocationSize);
+    memcpy(pMappedStagingBuffer, rawTexture->pData, rawTexture->dataSize);
+    ktxr = rawTexture->vtbl->IterateLevels((ktxTexture*)rawTexture, [](int miplevel, int face,
+        int width, int height, int depth,
+        ktx_uint64_t faceLodSize,
+        void* pixels, void* userdata) -> ktx_error_code_e
+        {
+            user_cbdata_optimal* ud = (user_cbdata_optimal*)userdata;
+            (void)(pixels);
+
+            // Set up copy to destination region in final image
+#if defined(_DEBUG)
+            assert(ud->region < ud->regionsArrayEnd);
+#endif
+            ud->region->bufferOffset = ud->offset;
+            ud->offset += faceLodSize;
+            // These 2 are expressed in texels.
+            ud->region->bufferRowLength = 0;
+            ud->region->bufferImageHeight = 0;
+            ud->region->imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            ud->region->imageSubresource.mipLevel = miplevel;
+            ud->region->imageSubresource.baseArrayLayer = face;
+            ud->region->imageSubresource.layerCount = ud->numLayers * ud->numFaces;
+            ud->region->imageOffset.x = 0;
+            ud->region->imageOffset.y = 0;
+            ud->region->imageOffset.z = 0;
+            ud->region->imageExtent.width = width;
+            ud->region->imageExtent.height = height;
+            ud->region->imageExtent.depth = depth;
+
+            ud->region += 1;
+
+            return KTX_SUCCESS;
+        }, &cbData);
+
+    vkUnmapMemory(device, stagingBufferMemory);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(copyCommandBuffer, &beginInfo);
+
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = m_Resource;
+    barrier.subresourceRange = subresourceRange;
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+    vkCmdPipelineBarrier(
+        copyCommandBuffer,
+        sourceStage, destinationStage,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier
+    );
+
+    vkCmdCopyBufferToImage(copyCommandBuffer, stagingBuffer, m_Resource, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regionsNumber, regions);
+
+    barrier = {};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = m_Resource;
+    barrier.subresourceRange = subresourceRange;
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+    vkCmdPipelineBarrier(
+        copyCommandBuffer,
+        sourceStage, destinationStage,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier
+    );
+
+    vkEndCommandBuffer(copyCommandBuffer);
+
+    (*copyPipeline)->Wait();
+
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingBufferMemory, nullptr);
+    delete[] regions;
 }
 
 void SampleRenderV2::VKTexture2D::TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels)

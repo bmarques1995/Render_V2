@@ -127,6 +127,7 @@ void SampleRenderV2::Application::StartApplication()
 	);
 
 	m_Shader.reset(Shader::Instantiate(&m_Context, "./assets/shaders/HelloTriangle", layout, smallBufferLayout, uniformsLayout, textureLayout, samplerLayout));
+	m_CompleteMVP.mipLevel(0, 0) = (float)(m_Texture1->GetTextureDescription().GetMipsLevel() - 1);
 	m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 1, 1);
 	m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 2, 1);
 	m_Shader->UploadTexture2D(&m_Texture1);
@@ -135,6 +136,23 @@ void SampleRenderV2::Application::StartApplication()
 	//m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 1, 2);
 	m_VertexBuffer.reset(VertexBuffer::Instantiate(&m_Context, (const void*)&vBuffer[0], sizeof(vBuffer), layout.GetStride()));
 	m_IndexBuffer.reset(IndexBuffer::Instantiate(&m_Context, (const void*)&iBuffer[0], sizeof(iBuffer) / sizeof(uint32_t)));
+
+	
+
+	m_LoaderThread = new std::thread([](Eigen::Matrix4f* mipController, uint32_t startMip)
+		{
+			float mipLevel = startMip;
+			std::mutex mtx;
+			while (mipLevel != 0.0f)
+			{
+				mtx.lock();
+				(*mipController)(0, 0) = mipLevel;
+				mtx.unlock();
+				std::this_thread::sleep_for(std::chrono::milliseconds(600));
+				mipLevel -= 1.0f;
+			}
+			
+		}, &m_CompleteMVP.mipLevel, m_Texture1->GetTextureDescription().GetMipsLevel() - 1);
 }
 
 SampleRenderV2::Application::~Application()
@@ -150,6 +168,8 @@ SampleRenderV2::Application::~Application()
 	m_CopyPipeline.reset();
 	m_Context.reset();
 	m_Window.reset();
+	m_LoaderThread->join();
+	delete m_LoaderThread;
 	SampleRenderV2::Console::End();
 }
 
@@ -172,6 +192,8 @@ void SampleRenderV2::Application::Run()
 					//m_Context->Draw(m_IndexBuffer->GetCount());
 					m_Shader->Stage();
 					m_Shader->BindSmallBuffer(&m_SmallMVP.model(0, 0), sizeof(m_SmallMVP), 0);
+					m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 1, 1);
+					m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 2, 1);
 					m_Shader->BindDescriptors();
 					m_VertexBuffer->Stage();
 					m_IndexBuffer->Stage();

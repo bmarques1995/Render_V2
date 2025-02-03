@@ -38,7 +38,7 @@ struct CompleteMVP
     float4x4 M;
     float4x4 V;
     float4x4 P;
-    float4x4 F;
+    float4x4 Mips;
 };
 
 struct SSBO
@@ -46,7 +46,7 @@ struct SSBO
     float4x4 M;
     float4x4 V;
     float4x4 P;
-    float4x4 F;
+    float4x4 Mips;
 };
 
 #ifdef VK_HLSL
@@ -109,7 +109,7 @@ PSInput vs_main(VSInput vsInput)
 
 float4 ps_main(PSInput psInput) : SV_TARGET0
 {
-    float4 pixel1 = textureChecker.SampleLevel(dynamicSampler, psInput.txc, 0.0f);
+    float4 pixel1 = textureChecker.SampleLevel(dynamicSampler, psInput.txc, m_CompleteMVP.Mips[0][0]);
     float4 pixel2 = textureChecker2.SampleLevel(dynamicSampler2, psInput.txc, 0.0f);
     float4 mixPixel;
     if (pixel1.a < 0.8f)

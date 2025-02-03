@@ -34,6 +34,7 @@ SampleRenderV2::D3D12Texture2D::D3D12Texture2D(const std::shared_ptr<D3D12Contex
 	hr = DirectX::LoadDDSTextureFromFile(device, native_texture_path_w.c_str(), (ID3D12Resource**)texture.GetAddressOf(), pixels, subresources, 0, &alphaMode, &isCubeMap);
 	assert(hr == S_OK);
 
+	UpdateTextureInfo(texture->GetDesc1());
 	CreateResource(texture->GetDesc1());
 	CopyDDSBuffer(m_Texture.Get(), &subresources);
 
@@ -52,12 +53,12 @@ const SampleRenderV2::TextureElement& SampleRenderV2::D3D12Texture2D::GetTexture
 
 uint32_t SampleRenderV2::D3D12Texture2D::GetWidth() const
 {
-	return 0;
+	return m_Specification.GetWidth();
 }
 
 uint32_t SampleRenderV2::D3D12Texture2D::GetHeight() const
 {
-	return 0;
+	return m_Specification.GetHeight();
 }
 
 bool SampleRenderV2::D3D12Texture2D::IsLoaded() const
@@ -68,6 +69,15 @@ bool SampleRenderV2::D3D12Texture2D::IsLoaded() const
 ID3D12Resource2* SampleRenderV2::D3D12Texture2D::GetResource() const
 {
 	return m_Texture.GetConst();
+}
+
+void SampleRenderV2::D3D12Texture2D::UpdateTextureInfo(const D3D12_RESOURCE_DESC1& desc)
+{
+	m_Specification.m_Width = desc.Width;
+	m_Specification.m_Height = desc.Height;
+	m_Specification.m_Depth = desc.DepthOrArraySize;
+	m_Specification.m_MipsLevel = desc.MipLevels;
+	m_Specification.m_Channels = 4;
 }
 
 void SampleRenderV2::D3D12Texture2D::CreateResource()
@@ -232,75 +242,6 @@ void SampleRenderV2::D3D12Texture2D::CopyBuffer()
 	copyCommandList->Reset(copyCommandAllocator, nullptr);
 }
 
-void SampleRenderV2::D3D12Texture2D::CopyDefinitiveBuffer(ID3D12Resource2* buffer)
-{
-	HRESULT hr;
-	auto device = (*m_Context)->GetDevicePtr();
-	ComPointer<ID3D12Resource2> textureBuffer;
-	std::shared_ptr<D3D12CopyPipeline>* copyPipeline = (std::shared_ptr<D3D12CopyPipeline>*)
-		(Application::GetInstance()->GetCopyPipeline());
-
-	auto copyCommandList = (*copyPipeline)->GetCommandList();
-	auto copyCommandAllocator = (*copyPipeline)->GetCommandAllocator();
-	auto copyCommandQueue = (*copyPipeline)->GetCommandQueue();
-
-	D3D12_TEXTURE_COPY_LOCATION destLocation = {};
-	destLocation.pResource = m_Texture;
-	destLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-	destLocation.SubresourceIndex = 0;
-
-	D3D12_RESOURCE_DESC1 textureDesc = m_Texture->GetDesc1();
-
-	D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
-	srcLocation.pResource = buffer;
-	srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-	//3rd arg represents the number of subresources
-	device->GetCopyableFootprints1(&textureDesc, 0, 1, 0, &srcLocation.PlacedFootprint, nullptr, nullptr, nullptr);
-
-	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Transition.pResource = m_Texture;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_GENERIC_READ;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	copyCommandList->ResourceBarrier(1, &barrier);
-
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Transition.pResource = buffer;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	copyCommandList->ResourceBarrier(1, &barrier);
-
-	copyCommandList->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
-
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Transition.pResource = buffer;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	copyCommandList->ResourceBarrier(1, &barrier);
-
-	// Transition the resource to PIXEL_SHADER_RESOURCE for sampling
-
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Transition.pResource = m_Texture;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	copyCommandList->ResourceBarrier(1, &barrier);
-
-	copyCommandList->Close();
-
-	ID3D12CommandList* lists[] = { copyCommandList };
-	copyCommandQueue->ExecuteCommandLists(1, lists);
-
-	(*copyPipeline)->Wait();
-
-	copyCommandAllocator->Reset();
-	copyCommandList->Reset(copyCommandAllocator, nullptr);
-}
-
 void SampleRenderV2::D3D12Texture2D::CopyDDSBuffer(ID3D12Resource2* buffer, std::vector<D3D12_SUBRESOURCE_DATA>* subresources)
 {
 	auto device = (*m_Context)->GetDevicePtr();
@@ -318,6 +259,8 @@ void SampleRenderV2::D3D12Texture2D::CopyDDSBuffer(ID3D12Resource2* buffer, std:
 	CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE_UPLOAD);
 
 	auto desc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
+
+	auto desc2 = (D3D12_RESOURCE_DESC)(desc);
 
 	ComPointer<ID3D12Resource> uploadRes;
 	hr = device->CreateCommittedResource(

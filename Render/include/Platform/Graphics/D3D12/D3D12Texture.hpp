@@ -24,11 +24,11 @@ namespace SampleRenderV2
 		ID3D12Resource2* GetResource() const;
 
 	private:
+		void UpdateTextureInfo(const D3D12_RESOURCE_DESC1& desc);
 		void CreateResource();
 		void CreateResource(const D3D12_RESOURCE_DESC1& desc);
 		void CopyBuffer();
 
-		void CopyDefinitiveBuffer(ID3D12Resource2* buffer);
 
 		void CopyDDSBuffer(ID3D12Resource2* buffer, std::vector<D3D12_SUBRESOURCE_DATA>* subresources);
 

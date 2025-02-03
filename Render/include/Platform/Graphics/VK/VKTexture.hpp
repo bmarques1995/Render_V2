@@ -3,7 +3,7 @@
 #include "Texture.hpp"
 #include "VKContext.hpp"
 #include <ktxvulkan.h>
-
+#include <ktx.h>
 
 namespace SampleRenderV2
 {
@@ -28,8 +28,11 @@ namespace SampleRenderV2
 	private:
 		void CreateResource();
 		void CopyBuffer();
-
-		void CreateKTXResource(std::string native_texture_path);
+		
+		void CreateKTXBuffer(std::string native_texture_path, ktxTexture2** kTextureBuffer);
+		void CreateKTXResourceRaw(ktxTexture2* rawTexture);
+		void CopyKTXBufferRaw(ktxTexture2* rawTexture);
+		void UpdateTextureInfo(const ktxTexture2& kTexture);
 
 		void TransitionImageLayout(
 			VkCommandBuffer commandBuffer,
