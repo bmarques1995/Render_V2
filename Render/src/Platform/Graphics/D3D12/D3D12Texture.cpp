@@ -227,7 +227,7 @@ void SampleRenderV2::D3D12Texture2D::CopyBuffer()
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Transition.pResource = m_Texture;
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	copyCommandList->ResourceBarrier(1, &barrier);
 
@@ -271,11 +271,15 @@ void SampleRenderV2::D3D12Texture2D::CopyDDSBuffer(ID3D12Resource2* buffer, std:
 		nullptr,
 		IID_PPV_ARGS(uploadRes.GetAddressOf()));
 
+	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(buffer,
+		D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST);
+	copyCommandList->ResourceBarrier(1, &barrier);
+
 	UpdateSubresources(copyCommandList, buffer, uploadRes.Get(),
 		0, 0, static_cast<UINT>(subresources->size()), subresources->data());
 
-	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(buffer,
-		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	barrier = CD3DX12_RESOURCE_BARRIER::Transition(buffer,
+		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	copyCommandList->ResourceBarrier(1, &barrier);
 
 	hr = copyCommandList->Close();

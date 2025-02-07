@@ -331,10 +331,10 @@ void SampleRenderV2::VKContext::CreateInstance()
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "Hello Triangle";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 4, 0);
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, 4, 304);
     appInfo.pEngineName = "No Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 4, 0);
-    appInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 4, 0);
+    appInfo.engineVersion = VK_MAKE_VERSION(1, 4, 304);
+    appInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 4, 304);
 
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
