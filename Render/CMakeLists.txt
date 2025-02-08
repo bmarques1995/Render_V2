@@ -23,12 +23,12 @@ if(WIN32)
 	trace_dependency(NAME Spirv-Headers INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/spirv_headers.ps1")
 	trace_dependency(NAME SPIRV-Tools INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/spirv_tools.ps1")
 	
-	trace_installable_file(NAME "VkLayer_khronos_shader_object" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_extensions.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "dll")
-	trace_installable_file(NAME "VkLayer_khronos_shader_object" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_extensions.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "json")
-	trace_installable_file(NAME "VkLayer_khronos_synchronization2" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_extensions.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "dll")
-	trace_installable_file(NAME "VkLayer_khronos_synchronization2" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_extensions.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "json")
-	trace_installable_file(NAME "VkLayer_khronos_validation" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_validation.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "dll")
-	trace_installable_file(NAME "VkLayer_khronos_validation" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_validation.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "json")
+	trace_installable_file(NAME "VkLayer_khronos_shader_object" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_extensions.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "dll" LIMIT_SEARCH_PATHS)
+	trace_installable_file(NAME "VkLayer_khronos_shader_object" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_extensions.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "json" LIMIT_SEARCH_PATHS)
+	trace_installable_file(NAME "VkLayer_khronos_synchronization2" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_extensions.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "dll" LIMIT_SEARCH_PATHS)
+	trace_installable_file(NAME "VkLayer_khronos_synchronization2" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_extensions.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "json" LIMIT_SEARCH_PATHS)
+	trace_installable_file(NAME "VkLayer_khronos_validation" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_validation.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "dll" LIMIT_SEARCH_PATHS)
+	trace_installable_file(NAME "VkLayer_khronos_validation" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/vulkan_validation.ps1" LOCATION "${CMAKE_PREFIX_PATH}/bin" EXTENSION "json" LIMIT_SEARCH_PATHS)
 
 	
 	trace_dependency(NAME imgui INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/imgui.ps1")

@@ -23,7 +23,7 @@ bool SampleRenderV2::VKContext::CheckLayerSupport(const std::vector<const char*>
     std::vector<VkLayerProperties> availableLayers(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-    for (const char* layerName : s_ValidationLayers) {
+    for (const char* layerName : layerList) {
         bool layerFound = false;
 
         for (const auto& layerProperties : availableLayers) {
@@ -363,16 +363,13 @@ void SampleRenderV2::VKContext::CreateInstance()
     std::vector<const char*> layers;
     layers.push_back("VK_LAYER_KHRONOS_synchronization2");
 
-    assert(CheckLayerSupport(layers));
+    CheckLayerSupport(layers);
 
 #ifdef RENDER_DEBUG_MODE
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 
     layers.push_back("VK_LAYER_KHRONOS_validation");
-
-    createInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
-    createInfo.ppEnabledLayerNames = layers.data();
 
     PopulateDebugMessengerCreateInfo(debugCreateInfo);
     createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
@@ -381,6 +378,9 @@ void SampleRenderV2::VKContext::CreateInstance()
     createInfo.pNext = nullptr;
 
 #endif
+
+    createInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
+    createInfo.ppEnabledLayerNames = layers.data();
 
     vkr = vkCreateInstance(&createInfo, nullptr, &m_Instance);
     assert(vkr == VK_SUCCESS);

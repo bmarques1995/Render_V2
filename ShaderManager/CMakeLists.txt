@@ -9,7 +9,7 @@ file(GLOB_RECURSE SHADER_MNG_HDRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "include/
 file(GLOB_RECURSE SHADER_MNG_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/*.cpp")
 
 if(WIN32)
-	trace_installable_file(NAME "dxc_manifest" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/dxc.ps1" LOCATION "${CMAKE_PREFIX_PATH}/lib/dxc" EXTENSION "txt")
+trace_library(NAME "dxcompiler" INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/dxc.ps1" LIMIT_SEARCH_PATHS)
 	trace_dependency(NAME jsoncpp INSTALL_SCRIPT "${PROJECT_SOURCE_DIR}/installers/jsoncpp.ps1")
 endif()
 

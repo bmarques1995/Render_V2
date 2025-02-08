@@ -6,6 +6,7 @@ SampleRenderV2::VKInstrumentator::VKInstrumentator(const std::shared_ptr<VKConte
 {
 	VkResult vkr;
 	auto device = (*m_Context)->GetDevice();
+	auto adapter = (*m_Context)->GetAdapter();
 
 	VkQueryPoolCreateInfo queryPoolCreateInfo = {};
 	queryPoolCreateInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
@@ -16,6 +17,10 @@ SampleRenderV2::VKInstrumentator::VKInstrumentator(const std::shared_ptr<VKConte
 	assert(vkr == VK_SUCCESS);
 
 	m_Timestamp = new uint64_t[m_QueryCount];
+
+	VkPhysicalDeviceProperties deviceProperties;
+	vkGetPhysicalDeviceProperties(adapter, &deviceProperties);
+	m_TimestampPeriod = deviceProperties.limits.timestampPeriod;
 }
 
 SampleRenderV2::VKInstrumentator::~VKInstrumentator()
@@ -47,7 +52,7 @@ double SampleRenderV2::VKInstrumentator::GetQueryTime()
 	if (vkr == VK_SUCCESS) {
 		// Calculate elapsed time between the timestamps
 		uint64_t elapsedTime = m_Timestamp[1] - m_Timestamp[0];
-		double result = elapsedTime * 1.0e-9;  // Convert to seconds
+		double result = elapsedTime * m_TimestampPeriod * .000000001;  // Convert to seconds
 		return result;
 	}
 	return 0.0f;

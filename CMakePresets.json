@@ -32,6 +32,16 @@
             }
         },
         {
+            "name": "x64-rel-debug-info",
+            "displayName": "x64 Release With Debug Info",
+            "inherits": "x64-debug",
+            "installDir": "${sourceDir}/Windows/RelWithDebInfo",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_PREFIX_PATH": "${sourceDir}/Windows/RelWithDebInfo"
+            }
+        },
+        {
             "name": "x64-release",
             "displayName": "x64 Release",
             "inherits": "x64-debug",

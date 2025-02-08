@@ -22,5 +22,6 @@ namespace SampleRenderV2
 		VkQueryPool m_QueryPool;
 		uint32_t m_QueryCount;
 		uint64_t* m_Timestamp;
+		double m_TimestampPeriod;
 	};
 }
