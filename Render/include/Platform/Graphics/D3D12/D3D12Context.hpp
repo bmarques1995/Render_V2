@@ -26,6 +26,8 @@ namespace SampleRenderV2
 
 		uint32_t GetUniformAttachment() const override;
 
+		void FillRenderPass() override;
+		void SubmitRenderPass() override;
 		void ReceiveCommands() override;
 		void DispatchCommands() override;
 		void Present() override;

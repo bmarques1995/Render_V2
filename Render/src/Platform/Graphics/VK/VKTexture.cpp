@@ -1,6 +1,6 @@
 #include "VKTexture.hpp"
 #include <cassert>
-#include "VKCopyPipeline.hpp"
+#include "VKExecutionPipeline.hpp"
 #include "Application.hpp"
 
 #include <vulkan/vulkan.hpp>
@@ -146,11 +146,11 @@ void SampleRenderV2::VKTexture2D::CopyBuffer()
 {
     VkResult vkr;
     auto device = (*m_Context)->GetDevice();
-    std::shared_ptr<VKCopyPipeline>* copyPipeline = (std::shared_ptr<VKCopyPipeline>*)
+    std::shared_ptr<VKExecutionPipeline>* copyPipeline = (std::shared_ptr<VKExecutionPipeline>*)
         (Application::GetInstance()->GetCopyPipeline());
 
     auto copyCommandBuffer = (*copyPipeline)->GetCommandBuffer();
-    auto copyCommandPool = (*copyPipeline)->GetCommandPool();
+    //auto copyCommandPool = (*copyPipeline)->GetCommandPool();
 
     VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
@@ -391,7 +391,7 @@ void SampleRenderV2::VKTexture2D::CopyKTXBufferRaw(ktxTexture2* rawTexture)
     VkResult vkr;
     ktxResult ktxr;
     auto device = (*m_Context)->GetDevice();
-    std::shared_ptr<VKCopyPipeline>* copyPipeline = (std::shared_ptr<VKCopyPipeline>*)
+    std::shared_ptr<VKExecutionPipeline>* copyPipeline = (std::shared_ptr<VKExecutionPipeline>*)
         (Application::GetInstance()->GetCopyPipeline());
 
     auto copyCommandBuffer = (*copyPipeline)->GetCommandBuffer();

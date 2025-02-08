@@ -13,8 +13,9 @@ const std::vector<const char*> SampleRenderV2::VKContext::s_ValidationLayers =
 {
     "VK_LAYER_KHRONOS_validation"
 };
+#endif
 
-bool SampleRenderV2::VKContext::CheckValidationLayerSupport()
+bool SampleRenderV2::VKContext::CheckLayerSupport(const std::vector<const char*>& layerList)
 {
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -39,8 +40,6 @@ bool SampleRenderV2::VKContext::CheckValidationLayerSupport()
 
     return true;
 }
-
-#endif
 
 const std::vector<const char*> SampleRenderV2::VKContext::deviceExtensions =
 {
@@ -130,6 +129,30 @@ uint32_t SampleRenderV2::VKContext::GetFramesInFlight() const
     return m_FramesInFlight;
 }
 
+void SampleRenderV2::VKContext::FillRenderPass()
+{
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = m_RenderPass;
+    renderPassInfo.framebuffer = m_SwapChainFramebuffers[m_CurrentImageIndex];
+    renderPassInfo.renderArea.offset = { 0, 0 };
+    renderPassInfo.renderArea.extent = m_SwapChainExtent;
+
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = m_ClearColor;
+    clearValues[1].depthStencil = { 1.0f, 0 };
+
+    renderPassInfo.clearValueCount = clearValues.size();
+    renderPassInfo.pClearValues = clearValues.data();
+
+    vkCmdBeginRenderPass(m_CommandBuffers[m_CurrentBufferIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void SampleRenderV2::VKContext::SubmitRenderPass()
+{
+    vkCmdEndRenderPass(m_CommandBuffers[m_CurrentBufferIndex]);
+}
+
 void SampleRenderV2::VKContext::ReceiveCommands()
 {
     vkWaitForFences(m_Device, 1, &m_InFlightFences[m_CurrentBufferIndex], VK_TRUE, UINT64_MAX);
@@ -154,28 +177,10 @@ void SampleRenderV2::VKContext::ReceiveCommands()
     if (vkBeginCommandBuffer(m_CommandBuffers[m_CurrentBufferIndex], &beginInfo) != VK_SUCCESS) {
         throw std::runtime_error("failed to begin recording command buffer!");
     }
-
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = m_RenderPass;
-    renderPassInfo.framebuffer = m_SwapChainFramebuffers[m_CurrentImageIndex];
-    renderPassInfo.renderArea.offset = { 0, 0 };
-    renderPassInfo.renderArea.extent = m_SwapChainExtent;
-
-    std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = m_ClearColor;
-    clearValues[1].depthStencil = { 1.0f, 0 };
-
-    renderPassInfo.clearValueCount = clearValues.size();
-    renderPassInfo.pClearValues = clearValues.data();
-
-    vkCmdBeginRenderPass(m_CommandBuffers[m_CurrentBufferIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void SampleRenderV2::VKContext::DispatchCommands()
 {
-    vkCmdEndRenderPass(m_CommandBuffers[m_CurrentBufferIndex]);
-
     if (vkEndCommandBuffer(m_CommandBuffers[m_CurrentBufferIndex]) != VK_SUCCESS) {
         throw std::runtime_error("failed to record command buffer!");
     }
@@ -325,7 +330,7 @@ void SampleRenderV2::VKContext::CreateInstance()
 {
     VkResult vkr;
 #ifdef RENDER_DEBUG_MODE
-    assert(CheckValidationLayerSupport());
+    assert(CheckLayerSupport(s_ValidationLayers));
 #endif
 
     VkApplicationInfo appInfo{};
@@ -350,25 +355,33 @@ void SampleRenderV2::VKContext::CreateInstance()
     m_InstanceExtensions.push_back("VK_EXT_debug_utils");
 #endif
 
+    m_InstanceExtensions.push_back("VK_EXT_layer_settings");
+
     createInfo.enabledExtensionCount = static_cast<uint32_t>(m_InstanceExtensions.size());
     createInfo.ppEnabledExtensionNames = m_InstanceExtensions.data();
 
-#ifdef RENDER_DEBUG_MODE
+    std::vector<const char*> layers;
+    layers.push_back("VK_LAYER_KHRONOS_synchronization2");
 
+    assert(CheckLayerSupport(layers));
+
+#ifdef RENDER_DEBUG_MODE
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 
-    createInfo.enabledLayerCount = static_cast<uint32_t>(s_ValidationLayers.size());
-    createInfo.ppEnabledLayerNames = s_ValidationLayers.data();
+    layers.push_back("VK_LAYER_KHRONOS_validation");
+
+    createInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
+    createInfo.ppEnabledLayerNames = layers.data();
 
     PopulateDebugMessengerCreateInfo(debugCreateInfo);
     createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 #else
 
-    createInfo.enabledLayerCount = 0;
-
     createInfo.pNext = nullptr;
+
 #endif
+
     vkr = vkCreateInstance(&createInfo, nullptr, &m_Instance);
     assert(vkr == VK_SUCCESS);
 }

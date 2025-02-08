@@ -1,15 +1,15 @@
 #pragma once
 
-#include "CopyPipeline.hpp"
+#include "ExecutionPipeline.hpp"
 #include "VKContext.hpp"
 
 namespace SampleRenderV2
 {
-	class VKCopyPipeline : public CopyPipeline
+	class VKExecutionPipeline : public ExecutionPipeline
 	{
 	public:
-		VKCopyPipeline(const std::shared_ptr<VKContext>* context);
-		~VKCopyPipeline();
+		VKExecutionPipeline(const std::shared_ptr<VKContext>* context);
+		~VKExecutionPipeline();
 
 		void Wait() override;
 	

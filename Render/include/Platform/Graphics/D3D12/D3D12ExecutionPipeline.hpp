@@ -2,16 +2,16 @@
 
 #ifdef RENDER_USES_WINDOWS
 
-#include "CopyPipeline.hpp"
+#include "ExecutionPipeline.hpp"
 #include "D3D12Context.hpp"
 
 namespace SampleRenderV2
 {
-	class D3D12CopyPipeline : public CopyPipeline
+	class D3D12ExecutionPipeline : public ExecutionPipeline
 	{
 	public:
-		D3D12CopyPipeline(const std::shared_ptr<D3D12Context>* context);
-		~D3D12CopyPipeline();
+		D3D12ExecutionPipeline(const std::shared_ptr<D3D12Context>* context);
+		~D3D12ExecutionPipeline();
 
 		void Wait() override;
 	

@@ -1,9 +1,9 @@
 #ifdef RENDER_USES_WINDOWS
 
-#include "D3D12CopyPipeline.hpp"
+#include "D3D12ExecutionPipeline.hpp"
 #include <cassert>
 
-SampleRenderV2::D3D12CopyPipeline::D3D12CopyPipeline(const std::shared_ptr<D3D12Context>* context) :
+SampleRenderV2::D3D12ExecutionPipeline::D3D12ExecutionPipeline(const std::shared_ptr<D3D12Context>* context) :
 	m_Context(context)
 {
 	auto device = (*m_Context)->GetDevicePtr();
@@ -29,32 +29,32 @@ SampleRenderV2::D3D12CopyPipeline::D3D12CopyPipeline(const std::shared_ptr<D3D12
 	assert(hr == S_OK);
 }
 
-SampleRenderV2::D3D12CopyPipeline::~D3D12CopyPipeline()
+SampleRenderV2::D3D12ExecutionPipeline::~D3D12ExecutionPipeline()
 {
 }
 
-void SampleRenderV2::D3D12CopyPipeline::Wait()
+void SampleRenderV2::D3D12ExecutionPipeline::Wait()
 {
 	WaitCopyPipeline();
 	m_CopyFenceEvent = CreateEventW(nullptr, false, false, nullptr);
 }
 
-ID3D12GraphicsCommandList6* SampleRenderV2::D3D12CopyPipeline::GetCommandList() const
+ID3D12GraphicsCommandList6* SampleRenderV2::D3D12ExecutionPipeline::GetCommandList() const
 {
 	return m_CopyCommandList.GetConst();
 }
 
-ID3D12CommandAllocator* SampleRenderV2::D3D12CopyPipeline::GetCommandAllocator() const
+ID3D12CommandAllocator* SampleRenderV2::D3D12ExecutionPipeline::GetCommandAllocator() const
 {
 	return m_CopyCommandAllocator.GetConst();
 }
 
-ID3D12CommandQueue* SampleRenderV2::D3D12CopyPipeline::GetCommandQueue() const
+ID3D12CommandQueue* SampleRenderV2::D3D12ExecutionPipeline::GetCommandQueue() const
 {
 	return m_CopyCommandQueue.GetConst();
 }
 
-void SampleRenderV2::D3D12CopyPipeline::WaitCopyPipeline(UINT64 fenceValue)
+void SampleRenderV2::D3D12ExecutionPipeline::WaitCopyPipeline(UINT64 fenceValue)
 {
 	HRESULT hr;
 

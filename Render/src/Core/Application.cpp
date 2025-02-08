@@ -48,7 +48,7 @@ void SampleRenderV2::Application::StartApplication()
 	m_Starter.reset(new ApplicationStarter("render.json"));
 	m_Window.reset(Window::Instantiate());
 	m_Context.reset(GraphicsContext::Instantiate(m_Window.get(), 3));
-	m_CopyPipeline.reset(CopyPipeline::Instantiate(&m_Context));
+	m_CopyPipeline.reset(ExecutionPipeline::Instantiate(&m_Context));
 	//m_Context->SetClearColor(0x27/255.0f, 0xae/255.0f, 0x60/255.0f, 1.0f);
 	m_Window->ConnectResizer(std::bind(&GraphicsContext::WindowResize, m_Context.get(), std::placeholders::_1, std::placeholders::_2));
 	std::stringstream buffer;
@@ -136,7 +136,7 @@ void SampleRenderV2::Application::StartApplication()
 	//m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 1, 2);
 	m_VertexBuffer.reset(VertexBuffer::Instantiate(&m_Context, (const void*)&vBuffer[0], sizeof(vBuffer), layout.GetStride()));
 	m_IndexBuffer.reset(IndexBuffer::Instantiate(&m_Context, (const void*)&iBuffer[0], sizeof(iBuffer) / sizeof(uint32_t)));
-
+	m_Instrumentator.reset(GPUInstrumentator::Instantiate(&m_Context));
 	
 
 	m_LoaderThread = new std::thread([](Eigen::Matrix4f* mipController, uint32_t startMip)
@@ -157,6 +157,7 @@ void SampleRenderV2::Application::StartApplication()
 
 SampleRenderV2::Application::~Application()
 {
+	m_Instrumentator.reset();
 	m_Texture2.reset();
 	m_Texture1.reset();
 	m_IndexBuffer.reset();
@@ -183,13 +184,17 @@ void SampleRenderV2::Application::Run()
 		{
 			try
 			{
+				
 				m_Context->ReceiveCommands();
+				m_Instrumentator->BeginQueryTime();
+				m_Context->FillRenderPass();
 				m_Context->StageViewportAndScissors();
 				m_ImguiWindowController->ReceiveInput();
 				{
 					for (Layer* layer : m_LayerStack)
 						layer->OnUpdate();
 					//m_Context->Draw(m_IndexBuffer->GetCount());
+					
 					m_Shader->Stage();
 					m_Shader->BindSmallBuffer(&m_SmallMVP.model(0, 0), sizeof(m_SmallMVP), 0);
 					m_Shader->UpdateCBuffer(&m_CompleteMVP.model(0, 0), sizeof(m_CompleteMVP), 1, 1);
@@ -198,6 +203,7 @@ void SampleRenderV2::Application::Run()
 					m_VertexBuffer->Stage();
 					m_IndexBuffer->Stage();
 					m_Context->Draw(m_IndexBuffer->GetCount());
+					
 
 					m_ImguiContext->ReceiveInput();
 					ImguiContext::StartFrame();
@@ -211,7 +217,10 @@ void SampleRenderV2::Application::Run()
 
 					
 				}
+				m_Context->SubmitRenderPass();
+				m_Instrumentator->EndQueryTime();
 				m_Context->DispatchCommands();
+				Console::CoreLog("Ellapsed time: {}", m_Instrumentator->GetQueryTime());
 				m_Context->Present();
 			}
 			catch (GraphicsException e)
@@ -237,7 +246,7 @@ SampleRenderV2::Application* SampleRenderV2::Application::GetInstance()
 	return s_AppSingleton;
 }
 
-std::shared_ptr<SampleRenderV2::CopyPipeline>* SampleRenderV2::Application::GetCopyPipeline()
+std::shared_ptr<SampleRenderV2::ExecutionPipeline>* SampleRenderV2::Application::GetCopyPipeline()
 {
 	return &m_CopyPipeline;
 }

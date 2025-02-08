@@ -4,9 +4,10 @@
 #include "ApplicationStarter.hpp"
 #include "Window.hpp"
 #include "GraphicsContext.hpp"
+#include "GPUInstrumentator.hpp"
 #include "ImguiWindowController.hpp"
 #include "ImguiContext.hpp"
-#include "CopyPipeline.hpp"
+#include "ExecutionPipeline.hpp"
 #include "CSOCompiler.hpp"
 #include "SPVCompiler.hpp"
 #include "TextureCaster.hpp"
@@ -49,7 +50,7 @@ namespace SampleRenderV2
 			return m_Window;
 		}
 
-		std::shared_ptr<CopyPipeline>* GetCopyPipeline();
+		std::shared_ptr<ExecutionPipeline>* GetCopyPipeline();
 		/*{
 			return &m_CopyPipeline;
 		}*/
@@ -93,11 +94,12 @@ namespace SampleRenderV2
 		std::shared_ptr<GraphicsContext> m_Context;
 		std::shared_ptr<ImguiWindowController> m_ImguiWindowController;
 		std::shared_ptr<Shader> m_Shader;
-		std::shared_ptr<CopyPipeline> m_CopyPipeline;
+		std::shared_ptr<ExecutionPipeline> m_CopyPipeline;
 		std::shared_ptr<Texture2D> m_Texture1;
 		std::shared_ptr<Texture2D> m_Texture2;
 		std::shared_ptr<VertexBuffer> m_VertexBuffer;
 		std::shared_ptr<IndexBuffer> m_IndexBuffer;
+		std::shared_ptr<GPUInstrumentator> m_Instrumentator;
 		//std::shared_ptr<TextureCaster> m_TextureCaster;
 
 		std::shared_ptr<CSOCompiler> m_CSOCompiler;

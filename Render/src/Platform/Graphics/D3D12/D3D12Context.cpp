@@ -54,19 +54,8 @@ uint32_t SampleRenderV2::D3D12Context::GetUniformAttachment() const
 	return 256;
 }
 
-uint32_t SampleRenderV2::D3D12Context::GetSmallBufferAttachment() const
+void SampleRenderV2::D3D12Context::FillRenderPass()
 {
-	return 4;
-}
-
-uint32_t SampleRenderV2::D3D12Context::GetFramesInFlight() const
-{
-	return m_FramesInFlight;
-}
-
-void SampleRenderV2::D3D12Context::ReceiveCommands()
-{
-	m_CurrentBufferIndex = m_SwapChain->GetCurrentBackBufferIndex();
 	auto backBuffer = m_RenderTargets[m_CurrentBufferIndex];
 	auto rtvHandle = m_RTVHandles[m_CurrentBufferIndex];
 	auto dsvHandle = m_DSVHandle;
@@ -95,10 +84,9 @@ void SampleRenderV2::D3D12Context::ReceiveCommands()
 	depthStencilDesc.DepthEndingAccess.Type = D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE;
 
 	m_CommandLists[m_CurrentBufferIndex]->BeginRenderPass(1, &renderTargetDesc, &depthStencilDesc, D3D12_RENDER_PASS_FLAG_NONE);
-	//m_CommandLists[m_CurrentBufferIndex]->BeginRenderPass(1, &renderTargetDesc, nullptr, D3D12_RENDER_PASS_FLAG_NONE);
 }
 
-void SampleRenderV2::D3D12Context::DispatchCommands()
+void SampleRenderV2::D3D12Context::SubmitRenderPass()
 {
 	auto backBuffer = m_RenderTargets[m_CurrentBufferIndex];
 
@@ -113,7 +101,25 @@ void SampleRenderV2::D3D12Context::DispatchCommands()
 	m_CommandLists[m_CurrentBufferIndex]->EndRenderPass();
 
 	m_CommandLists[m_CurrentBufferIndex]->ResourceBarrier(1, &rtSetupBarrier);
+}
 
+uint32_t SampleRenderV2::D3D12Context::GetSmallBufferAttachment() const
+{
+	return 4;
+}
+
+uint32_t SampleRenderV2::D3D12Context::GetFramesInFlight() const
+{
+	return m_FramesInFlight;
+}
+
+void SampleRenderV2::D3D12Context::ReceiveCommands()
+{
+	m_CurrentBufferIndex = m_SwapChain->GetCurrentBackBufferIndex();
+}
+
+void SampleRenderV2::D3D12Context::DispatchCommands()
+{
 	// === Execute commands ===
 	auto hr = m_CommandLists[m_CurrentBufferIndex]->Close();
 

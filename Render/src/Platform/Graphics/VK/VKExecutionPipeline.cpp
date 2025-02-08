@@ -1,7 +1,7 @@
-#include "VKCopyPipeline.hpp"
+#include "VKExecutionPipeline.hpp"
 #include <cassert>
 
-SampleRenderV2::VKCopyPipeline::VKCopyPipeline(const std::shared_ptr<VKContext>* context) :
+SampleRenderV2::VKExecutionPipeline::VKExecutionPipeline(const std::shared_ptr<VKContext>* context) :
     m_Context(context)
 {
     auto device = (*m_Context)->GetDevice();
@@ -30,7 +30,7 @@ SampleRenderV2::VKCopyPipeline::VKCopyPipeline(const std::shared_ptr<VKContext>*
     vkGetDeviceQueue(device, 0, 0, &m_CopyQueue);
 }
 
-SampleRenderV2::VKCopyPipeline::~VKCopyPipeline()
+SampleRenderV2::VKExecutionPipeline::~VKExecutionPipeline()
 {
     auto device = (*m_Context)->GetDevice();
     vkDeviceWaitIdle(device);
@@ -39,7 +39,7 @@ SampleRenderV2::VKCopyPipeline::~VKCopyPipeline()
     vkDestroyCommandPool(device, m_CopyCommandPool, nullptr);
 }
 
-void SampleRenderV2::VKCopyPipeline::Wait()
+void SampleRenderV2::VKExecutionPipeline::Wait()
 {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -50,22 +50,22 @@ void SampleRenderV2::VKCopyPipeline::Wait()
     vkQueueWaitIdle(m_CopyQueue);
 }
 
-VkQueue SampleRenderV2::VKCopyPipeline::GetCopyQueue() const
+VkQueue SampleRenderV2::VKExecutionPipeline::GetCopyQueue() const
 {
     return m_CopyQueue;
 }
 
-VkCommandBuffer SampleRenderV2::VKCopyPipeline::GetCommandBuffer() const
+VkCommandBuffer SampleRenderV2::VKExecutionPipeline::GetCommandBuffer() const
 {
     return m_CopyCommandBuffer;
 }
 
-VkCommandPool SampleRenderV2::VKCopyPipeline::GetCommandPool() const
+VkCommandPool SampleRenderV2::VKExecutionPipeline::GetCommandPool() const
 {
     return m_CopyCommandPool;
 }
 
-SampleRenderV2::QueueFamilyIndices SampleRenderV2::VKCopyPipeline::FindQueueFamilies(VkPhysicalDevice adapter)
+SampleRenderV2::QueueFamilyIndices SampleRenderV2::VKExecutionPipeline::FindQueueFamilies(VkPhysicalDevice adapter)
 {
     auto surface = (*m_Context)->GetSurface();
     QueueFamilyIndices indices;

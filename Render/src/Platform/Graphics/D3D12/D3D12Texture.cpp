@@ -1,6 +1,6 @@
 #include "D3D12Texture.hpp"
 #include <cassert>
-#include "D3D12CopyPipeline.hpp"
+#include "D3D12ExecutionPipeline.hpp"
 #include "Application.hpp"
 #include "DDSTextureLoader12.h"
 #include <vector>
@@ -159,7 +159,7 @@ void SampleRenderV2::D3D12Texture2D::CopyBuffer()
 	HRESULT hr;
 	auto device = (*m_Context)->GetDevicePtr();
 	ComPointer<ID3D12Resource2> textureBuffer;
-	std::shared_ptr<D3D12CopyPipeline>* copyPipeline = (std::shared_ptr<D3D12CopyPipeline>*)
+	std::shared_ptr<D3D12ExecutionPipeline>* copyPipeline = (std::shared_ptr<D3D12ExecutionPipeline>*)
 		(Application::GetInstance()->GetCopyPipeline());
 
 	auto copyCommandList = (*copyPipeline)->GetCommandList();
@@ -246,7 +246,7 @@ void SampleRenderV2::D3D12Texture2D::CopyDDSBuffer(ID3D12Resource2* buffer, std:
 {
 	auto device = (*m_Context)->GetDevicePtr();
 	HRESULT hr;
-	std::shared_ptr<D3D12CopyPipeline>* copyPipeline = (std::shared_ptr<D3D12CopyPipeline>*)
+	std::shared_ptr<D3D12ExecutionPipeline>* copyPipeline = (std::shared_ptr<D3D12ExecutionPipeline>*)
 		(Application::GetInstance()->GetCopyPipeline());
 
 	auto copyCommandList = (*copyPipeline)->GetCommandList();

@@ -37,6 +37,8 @@ namespace SampleRenderV2
 		uint32_t GetSmallBufferAttachment() const override; 
 		uint32_t GetFramesInFlight() const override;
 
+		void FillRenderPass() override;
+		void SubmitRenderPass() override;
 		void ReceiveCommands() override;
 		void DispatchCommands() override;
 		void Present() override;
@@ -67,13 +69,13 @@ namespace SampleRenderV2
 		//Master
 		void CreateInstance();
 
+		bool CheckLayerSupport(const std::vector<const char*>& layerList);
 
 #ifdef RENDER_DEBUG_MODE
 		VkDebugUtilsMessengerEXT m_DebugMessenger;
 
 		//Master
 		void SetupDebugMessage();
-		bool CheckValidationLayerSupport();
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 		VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 		void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
