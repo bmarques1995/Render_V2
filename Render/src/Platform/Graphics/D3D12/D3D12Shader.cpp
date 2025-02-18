@@ -54,12 +54,12 @@ SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* co
 	}
 
 	auto textureCount = m_TextureLayout.GetElements().size();
-	auto rootSigIndex = m_TextureLayout.GetElements().begin()->second.GetShaderRegister();
+	auto rootSigIndex = m_TextureLayout.GetElements().size() > 0 ? m_TextureLayout.GetElements().begin()->second.GetShaderRegister() : 0;
 	if(textureCount > 0)
 		m_RootSignatureSize += 4;
 
 	auto samplerCount = m_SamplerLayout.GetElements().size();
-	auto samplerRootSigIndex = m_SamplerLayout.GetElements().begin()->second.GetShaderRegister();
+	auto samplerRootSigIndex = m_SamplerLayout.GetElements().size() > 0 ? m_SamplerLayout.GetElements().begin()->second.GetShaderRegister() : 0;
 	if (samplerCount > 0)
 		m_RootSignatureSize += 4;
 
@@ -107,14 +107,16 @@ SampleRenderV2::D3D12Shader::D3D12Shader(const std::shared_ptr<D3D12Context>* co
 		i++;
 	}
 
-	PreallocateSamplerDescriptors(samplerCount, samplerRootSigIndex);
+	if (samplerCount > 0)
+		PreallocateSamplerDescriptors(samplerCount, samplerRootSigIndex);
 
 	for (auto& sampler : m_SamplerLayout.GetElements())
 	{
 		CreateSampler(sampler.second);
 	}
 
-	PreallocateTextureDescriptors(textureCount, rootSigIndex);
+	if (textureCount > 0)
+		PreallocateTextureDescriptors(textureCount, rootSigIndex);
 
 	for(auto& desc: m_TabledDescriptors)
 		m_MergedHeaps.push_back(desc.second.Get());

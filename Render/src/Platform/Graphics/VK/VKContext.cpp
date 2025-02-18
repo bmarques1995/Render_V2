@@ -363,7 +363,7 @@ void SampleRenderV2::VKContext::CreateInstance()
     std::vector<const char*> layers;
     layers.push_back("VK_LAYER_KHRONOS_synchronization2");
 
-    CheckLayerSupport(layers);
+    assert(CheckLayerSupport(layers));
 
 #ifdef RENDER_DEBUG_MODE
 
